@@ -1,5 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+import { supabase } from "../lib/supabase";
+
+function dbToPatient(row) {
+  const hoy = new Date();
+  const control = new Date(row.fecha_proximo_control);
+  const dias = Math.round((control - hoy) / (1000 * 60 * 60 * 24));
+  const estado = dias < 0 ? "vencida" : dias <= 30 ? "proxima" : "vigente";
+  const alertas = [];
+  if (estado === "vencida") alertas.push("Receta vencida hace " + Math.abs(dias) + " dias");
+  if (estado === "proxima") alertas.push("Control en " + dias + " dias");
+  return {
+    id: row.id, rut: row.rut, name: row.nombre, age: row.edad, phone: row.telefono,
+    lastVisit: row.fecha_ultima_visita, nextControl: row.fecha_proximo_control,
+    receta: {
+      fecha: row.fecha_ultima_visita ? new Date(row.fecha_ultima_visita).toLocaleDateString("es-CL") : "—",
+      od: { esf: row.od_esfera, cil: row.od_cilindro, eje: row.od_eje || "—", av: row.od_av },
+      oi: { esf: row.oi_esfera, cil: row.oi_cilindro, eje: row.oi_eje || "—", av: row.oi_av },
+      adicion: row.adicion, dp: row.dp, tipo: row.tipo_lente,
+      notas: row.notas_clinicas, optometrista: row.optometrista,
+    },
+    historial: [], producto: row.producto_actual, estado, alertas,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────
 // PALETA Y CONSTANTES
 // ─────────────────────────────────────────────────────────────────
@@ -440,18 +464,28 @@ function Typing() {
 function PanelFichas({ onSelectPatient, activePatient }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = PATIENTS_DB.filter(p => {
+  useEffect(() => {
+    supabase.from("pacientes").select("*").order("nombre")
+      .then(({ data, error }) => {
+        if (!error && data) setPatients(data.map(dbToPatient));
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = patients.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.rut.includes(search);
     const matchFilter = filter === "all" || p.estado === filter;
     return matchSearch && matchFilter;
   });
 
   const counts = {
-    all:     PATIENTS_DB.length,
-    vencida: PATIENTS_DB.filter(p => p.estado === "vencida").length,
-    proxima: PATIENTS_DB.filter(p => p.estado === "proxima").length,
-    vigente: PATIENTS_DB.filter(p => p.estado === "vigente").length,
+    all:     patients.length,
+    vencida: patients.filter(p => p.estado === "vencida").length,
+    proxima: patients.filter(p => p.estado === "proxima").length,
+    vigente: patients.filter(p => p.estado === "vigente").length,
   };
 
   return (
