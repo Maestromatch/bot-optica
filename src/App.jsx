@@ -40,7 +40,7 @@ export default function App() {
         {/* Protected Routes for the Optic */}
         <Route path="/optica"            element={<ProtectedRoute><AukenOptica /></ProtectedRoute>} />
         <Route path="/optica/landing"    element={<AukenOpticaLanding />} />
-        <Route path="/optica/dashboard"  element={<AukenOpticaDashboard />} />
+        <Route path="/optica/dashboard"  element={<ProtectedRoute><AukenOpticaDashboard /></ProtectedRoute>} />
         
         <Route path="/integrations"      element={<AukenIntegrations />} />
         <Route path="/admin"             element={<AukenAdmin />} />
