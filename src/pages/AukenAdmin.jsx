@@ -42,9 +42,19 @@ export default function AukenAdmin() {
   };
 
   const toggleEstado = (id) => {
-    setOpticas(prev => prev.map(o => 
-      o.id === id ? { ...o, estado: o.estado === "activo" ? "suspendido" : "activo" } : o
-    ));
+    setOpticas(prev => prev.map(o => {
+      if (o.id === id) {
+        const newState = o.estado === "activo" ? "suspendido" : "activo";
+        // Enforce kill switch via localStorage (in production this would be a Supabase flag)
+        if (newState === "suspendido") {
+          localStorage.setItem("auken_suspended", "true");
+        } else {
+          localStorage.removeItem("auken_suspended");
+        }
+        return { ...o, estado: newState };
+      }
+      return o;
+    }));
   };
 
   const addOptica = (e) => {

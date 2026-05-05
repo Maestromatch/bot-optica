@@ -266,12 +266,24 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {o.pacientesList && o.pacientesList.length > 0 ? o.pacientesList.map((p, i) => {
+                  {(() => {
+                    const filtered = sucursalFilter === "Todas" 
+                      ? (o.pacientesList || []) 
+                      : (o.pacientesList || []).filter(p => {
+                        const notas = (p.notas_clinicas || "").toLowerCase();
+                        const sf = sucursalFilter.toLowerCase();
+                        return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
+                      });
+                    return filtered.length > 0 ? filtered.map((p, i) => {
                     // Determinar si es un lead de operativo
                     const isOperativo = p.notas_clinicas?.toLowerCase().includes("operativo") || p.producto_actual?.toLowerCase().includes("operativo");
                     
                     return (
-                      <tr key={p.id || i} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                      <tr key={p.id || i} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s", cursor: "pointer" }} 
+                        onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} 
+                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        onClick={() => { setEditingPatient({...p}); setSelectedPatient(p); }}
+                      >
                         <td style={{ padding: "16px 24px" }}>
                           <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{p.nombre}</div>
                           <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>RUT: {p.rut}</div>
@@ -326,10 +338,11 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                   }) : (
                     <tr>
                       <td colSpan="4" style={{ padding: "40px", textAlign: "center", color: C.textDim, fontSize: 14 }}>
-                        Aún no hay pacientes o leads capturados.
+                        {sucursalFilter !== "Todas" ? `No hay pacientes en "${sucursalFilter}".` : "Aún no hay pacientes o leads capturados."}
                       </td>
                     </tr>
-                  )}
+                  );
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -391,6 +404,8 @@ export default function AukenOpticaDashboard() {
   const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [sucursalFilter, setSucursalFilter] = useState("Todas");
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [editingPatient, setEditingPatient] = useState(null);
 
   const handleScanReceta = async (e) => {
     const file = e.target.files[0];
@@ -653,6 +668,119 @@ export default function AukenOpticaDashboard() {
               </div>
             </form>
           </GlassCard>
+        </div>
+      )}
+
+      {/* MODAL FICHA DEL PACIENTE */}
+      {selectedPatient && editingPatient && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={() => setSelectedPatient(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, width: 520, maxHeight: "90vh", overflow: "auto", boxShadow: "0 16px 60px rgba(0,0,0,0.6)" }}>
+            {/* Header */}
+            <div style={{ padding: "24px 28px", borderBottom: `1px solid ${C.border}`, background: `linear-gradient(135deg, ${C.surface}, ${C.surfaceL})` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 22, color: C.text }}>{editingPatient.nombre}</div>
+                  <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>RUT: {editingPatient.rut || "—"} · Tel: {editingPatient.telefono}</div>
+                </div>
+                <button onClick={() => setSelectedPatient(null)} style={{ background: "transparent", border: "none", color: C.textMuted, fontSize: 20, cursor: "pointer" }}>✕</button>
+              </div>
+            </div>
+
+            <div style={{ padding: "20px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Editable Fields */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Nombre</label>
+                  <input value={editingPatient.nombre || ""} onChange={e => setEditingPatient({...editingPatient, nombre: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 6, outline: "none", fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>RUT</label>
+                  <input value={editingPatient.rut || ""} onChange={e => setEditingPatient({...editingPatient, rut: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 6, outline: "none", fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Teléfono</label>
+                  <input value={editingPatient.telefono || ""} onChange={e => setEditingPatient({...editingPatient, telefono: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 6, outline: "none", fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Estado</label>
+                  <select value={editingPatient.estado_compra || "Pendiente"} onChange={e => setEditingPatient({...editingPatient, estado_compra: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 6, outline: "none", fontSize: 13 }}>
+                    <option>Pendiente</option><option>Compró</option><option>No Compró</option>
+                  </select>
+                </div>
+              </div>
+              
+              {editingPatient.estado_compra === "Compró" && (
+                <div>
+                  <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Monto de Venta ($CLP)</label>
+                  <input type="number" value={editingPatient.monto_venta || ""} onChange={e => setEditingPatient({...editingPatient, monto_venta: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.neonGreen}50`, color: C.neonGreen, padding: 10, borderRadius: 6, outline: "none", fontSize: 16, fontWeight: 700 }} />
+                </div>
+              )}
+
+              <div>
+                <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Notas Clínicas</label>
+                <textarea value={editingPatient.notas_clinicas || ""} onChange={e => setEditingPatient({...editingPatient, notas_clinicas: e.target.value})} rows={3} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 6, outline: "none", fontSize: 13, resize: "none" }} />
+              </div>
+
+              {/* Receta Data (Editable) */}
+              {editingPatient.recetaData && (
+                <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
+                  <div style={{ fontSize: 11, color: C.neonBlue, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>📋 Ficha Óptica (Editable)</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+                    <div style={{ color: C.textMuted, fontWeight: 700 }}></div>
+                    <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Esfera</div>
+                    <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Cilindro</div>
+                    <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Eje</div>
+                    
+                    <div style={{ color: C.neonBlue, fontWeight: 700 }}>OD</div>
+                    <input value={editingPatient.recetaData.OD?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData.OD?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData.OD?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    
+                    <div style={{ color: C.neonBlue, fontWeight: 700 }}>OI</div>
+                    <input value={editingPatient.recetaData.OI?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData.OI?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData.OI?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 10, color: C.textMuted }}>ADD</label>
+                      <input value={editingPatient.recetaData.adicion || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, adicion: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 10, color: C.textMuted }}>DP</label>
+                      <input value={editingPatient.recetaData.dp || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, dp: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 10, color: C.textMuted }}>Fecha</label>
+                      <input value={editingPatient.recetaData.fecha || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, fecha: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Receta Image */}
+              {editingPatient.recetaImgUrl && (
+                <div>
+                  <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>📷 Imagen de Receta</div>
+                  <img src={editingPatient.recetaImgUrl} alt="Receta" style={{ width: "100%", borderRadius: 8, border: `1px solid ${C.border}` }} />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button onClick={() => setSelectedPatient(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Cerrar</button>
+                <button onClick={() => {
+                  setOpticaData(prev => ({
+                    ...prev,
+                    pacientesList: prev.pacientesList.map(p => p.id === selectedPatient.id ? { ...p, ...editingPatient } : p)
+                  }));
+                  setSelectedPatient(null);
+                }} style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 12, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
+                  💾 Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
