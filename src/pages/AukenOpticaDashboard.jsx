@@ -637,7 +637,11 @@ export default function AukenOpticaDashboard() {
         weeklyConsultas: [1, 2, 0, 1, 3, 2, 1, 4, 2, 3, 1, 5],
         weeklyRecuperados: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
         alertas: vencidas > 0 ? [`${vencidas} recetas vencidas pendientes de contactar`] : [],
-        pacientesList: data.sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0)),
+        pacientesList: data.map(p => ({
+          ...p,
+          recetaData: p.receta_data || p.recetaData || null,
+          recetaImgUrl: p.receta_img_url || p.recetaImgUrl || null
+        })).sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0)),
       }));
 
       setLoading(false);
@@ -838,9 +842,15 @@ export default function AukenOpticaDashboard() {
               </div>
 
               {/* Receta Data (Editable) */}
-              {editingPatient.recetaData && (
-                <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
-                  <div style={{ fontSize: 11, color: C.neonBlue, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>📋 Ficha Óptica (Editable)</div>
+              <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: C.neonBlue, textTransform: "uppercase", fontWeight: 700 }}>📋 Ficha Óptica (Editable)</div>
+                  {!editingPatient.recetaData && (
+                    <button onClick={() => setEditingPatient({...editingPatient, recetaData: { OD: { esfera: "", cilindro: "", eje: "" }, OI: { esfera: "", cilindro: "", eje: "" }, adicion: "", dp: "" }})} style={{ background: `${C.neonBlue}20`, border: `1px solid ${C.neonBlue}40`, color: C.neonBlue, fontSize: 10, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>+ Iniciar Ficha</button>
+                  )}
+                </div>
+                
+                {editingPatient.recetaData ? (
                   <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
                     <div style={{ color: C.textMuted, fontWeight: 700 }}></div>
                     <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Esfera</div>
@@ -857,30 +867,53 @@ export default function AukenOpticaDashboard() {
                     <input value={editingPatient.recetaData.OI?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                     <input value={editingPatient.recetaData.OI?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                   </div>
-                  <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 10, color: C.textMuted }}>ADD</label>
-                      <input value={editingPatient.recetaData.adicion || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, adicion: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 10, color: C.textMuted }}>DP</label>
-                      <input value={editingPatient.recetaData.dp || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, dp: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 10, color: C.textMuted }}>Fecha</label>
-                      <input value={editingPatient.recetaData.fecha || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, fecha: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
-                    </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "10px", color: C.textMuted, fontSize: 12, border: `1px dashed ${C.border}`, borderRadius: 6 }}>
+                    No hay datos clínicos registrados.
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: C.textMuted }}>ADD</label>
+                    <input value={editingPatient.recetaData?.adicion || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, adicion: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: C.textMuted }}>DP</label>
+                    <input value={editingPatient.recetaData?.dp || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, dp: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: C.textMuted }}>Fecha</label>
+                    <input value={editingPatient.recetaData?.fecha || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, fecha: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Receta Image */}
-              {editingPatient.recetaImgUrl && (
-                <div>
-                  <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>📷 Imagen de Receta</div>
-                  <img src={editingPatient.recetaImgUrl} alt="Receta" style={{ width: "100%", borderRadius: 8, border: `1px solid ${C.border}` }} />
-                </div>
-              )}
+              {/* Receta Image (Existing or Upload) */}
+              <div style={{ background: `${C.border}20`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
+                <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 12 }}>📷 Imagen de Receta</div>
+                {editingPatient.recetaImgUrl ? (
+                  <div style={{ position: "relative" }}>
+                    <img src={editingPatient.recetaImgUrl} alt="Receta" style={{ width: "100%", borderRadius: 8, border: `1px solid ${C.border}` }} />
+                    <button onClick={() => setEditingPatient({...editingPatient, recetaImgUrl: null})} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer" }}>✕</button>
+                  </div>
+                ) : (
+                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, border: `2px dashed ${C.border}`, borderRadius: 8, padding: "20px 0", cursor: "pointer", transition: "0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = C.neonBlue}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                  >
+                    <span style={{ fontSize: 24 }}>📤</span>
+                    <span style={{ fontSize: 11, color: C.textDim }}>Subir Foto de Receta</span>
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setEditingPatient({...editingPatient, recetaImgUrl: ev.target.result});
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+                )}
+              </div>
 
               {/* Action Buttons */}
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
@@ -894,7 +927,8 @@ export default function AukenOpticaDashboard() {
                     estado_compra: editingPatient.estado_compra,
                     monto_venta: editingPatient.monto_venta,
                     notas_clinicas: editingPatient.notas_clinicas,
-                    receta_data: editingPatient.recetaData, // Asumiendo que el campo es receta_data en la DB
+                    receta_data: editingPatient.recetaData, 
+                    receta_img_url: editingPatient.recetaImgUrl,
                   }).eq("id", selectedPatient.id);
 
                   if (!error) {
