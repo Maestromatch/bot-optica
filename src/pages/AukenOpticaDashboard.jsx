@@ -243,7 +243,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
       {tab === "metricas" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
           {/* Main KPIs */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             <Fade delay={0}>
               <KPI label="Total Pacientes" value={o.patients} color={C.text} sub="En la base de datos" />
             </Fade>
@@ -259,7 +259,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
           </div>
 
           {/* Financial KPIs */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             <Fade delay={180}>
               <GlassCard style={{ borderTop: `2px solid ${C.neonGreen}` }}>
                 <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>💸 Ventas de Hoy</div>
@@ -699,10 +699,22 @@ export default function AukenOpticaDashboard() {
         ::-webkit-scrollbar { width: 6px; background: ${C.bg}; }
         ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 6px; }
         ::-webkit-scrollbar-thumb:hover { background: ${C.textMuted}; }
+        
+        @media (max-width: 768px) {
+          .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+          .metrics-grid { grid-template-columns: 1fr !important; }
+          .nav-content { padding: 0 16px !important; }
+          .main-content { padding: 20px 16px !important; }
+          .tab-content { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .patient-modal { width: 95% !important; max-height: 90vh !important; overflow-y: auto !important; }
+        }
+        @media (max-width: 480px) {
+          .kpi-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* TOPNAV */}
-      <nav style={{ 
+      <nav className="nav-content" style={{ 
         background: `${C.surface}E6`, 
         backdropFilter: "blur(12px)",
         borderBottom: `1px solid ${C.border}`, 
@@ -738,7 +750,7 @@ export default function AukenOpticaDashboard() {
       </nav>
 
       {/* MAIN CONTAINER */}
-      <div style={{ padding: "40px 32px", maxWidth: 1100, margin: "0 auto" }}>
+      <div className="main-content" style={{ padding: "40px 32px", maxWidth: 1100, margin: "0 auto" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: 80, color: C.textDim, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
             <div style={{ width: 24, height: 24, border: `2px solid ${C.border}`, borderTopColor: C.neonBlue, borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
@@ -763,7 +775,7 @@ export default function AukenOpticaDashboard() {
       {/* MODAL NUEVO PROSPECTO */}
       {showModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-          <GlassCard style={{ width: 400, background: C.surface }}>
+          <GlassCard className="patient-modal" style={{ width: 400, background: C.surface }}>
             <h3 style={{ fontSize: 18, marginBottom: 20 }}>Ingresar Prospecto Manual</h3>
             
             {/* OCR Button */}
