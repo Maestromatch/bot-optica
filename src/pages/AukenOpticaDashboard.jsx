@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import Vapi from "@vapi-ai/web";
+// import Vapi from "@vapi-ai/web";
 // ── PALETA FUTURISTA (Dark Mode No Invasivo) ───────────────────
 const C = {
   bg:         "#090A0F", // Fondo muy oscuro, casi negro con tono azulado
@@ -612,12 +612,8 @@ export default function AukenOpticaDashboard() {
     try {
       const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
       if (pubKey && typeof Vapi !== 'undefined') {
-        const vapi = new Vapi(pubKey);
-        vapi.on("call-start", () => setVapiCallStatus("connected"));
-        vapi.on("call-end", () => setVapiCallStatus("disconnected"));
-        vapi.on("speech-start", () => setVapiCallStatus("speaking"));
-        vapi.on("speech-end", () => setVapiCallStatus("connected"));
-        setVapiInstance(vapi);
+        // const vapi = new Vapi(pubKey);
+        // setVapiInstance(vapi);
       }
     } catch (err) {
       console.warn("Vapi skip:", err);
