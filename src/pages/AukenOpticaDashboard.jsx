@@ -82,7 +82,7 @@ function GlassCard({ children, style = {} }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o }) {
+function OpticaDetail({ optica: o, showModal, setShowModal }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -121,18 +121,21 @@ function OpticaDetail({ optica: o }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, borderBottom: `1px solid ${C.border}`, paddingBottom: 16 }}>
-        {["Métricas", "Pacientes", "Campañas IA"].map(t => {
-          const id = t.toLowerCase().split(" ")[0];
-          const active = tab === id;
+        {[
+          { id: "metricas", label: "Métricas" },
+          { id: "pacientes", label: "Pacientes" },
+          { id: "campanas", label: "Campañas IA" }
+        ].map(t => {
+          const active = tab === t.id;
           return (
-            <button key={id} onClick={() => setTab(id)} style={{
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
               background: active ? C.surfaceL : "transparent",
               color: active ? C.text : C.textDim,
               border: active ? `1px solid ${C.borderGlow}` : "1px solid transparent",
               borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: active ? 600 : 500,
               cursor: "pointer", transition: "all 0.2s"
             }}>
-              {t}
+              {t.label}
             </button>
           );
         })}
@@ -269,7 +272,7 @@ function OpticaDetail({ optica: o }) {
         </Fade>
       )}
 
-      {tab === "campañas ia" && (
+      {tab === "campanas" && (
         <Fade>
           <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonAmber}` }}>
             <div style={{ marginBottom: 24 }}>

@@ -144,7 +144,7 @@ function Badge({ label, color, bg, border }) {
   return (
     <span style={{
       background: bg, color, border: `1px solid ${border || color + "40"}`,
-      borderRadius: 4, padding: "2px 7px", fontSize: 10,
+      borderRadius: 4, padding: "2px 7px", fontSize: 14,
       fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500,
       letterSpacing: "0.04em",
     }}>{label}</span>
@@ -165,7 +165,7 @@ function Divider({ label }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
       <div style={{ flex: 1, height: 1, background: C.border }} />
-      {label && <span style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{label}</span>}
+      {label && <span style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{label}</span>}
       <div style={{ flex: 1, height: 1, background: C.border }} />
     </div>
   );
@@ -189,17 +189,17 @@ function FichaCard({ patient, compact = false }) {
       <div onClick={() => compact && setOpen(o => !o)}
         style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: compact ? "pointer" : "default", background: C.bgDeep }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: C.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, fontFamily: "'Playfair Display', serif", flexShrink: 0 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: C.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', serif", flexShrink: 0 }}>
             {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
-            <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{p.rut} · {p.age} años</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
+            <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{p.rut} · {p.age} años</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <StatePill estado={p.estado} />
-          {compact && <span style={{ fontSize: 10, color: C.inkFaint }}>{ open ? "▲" : "▼" }</span>}
+          {compact && <span style={{ fontSize: 14, color: C.inkFaint }}>{ open ? "▲" : "▼" }</span>}
         </div>
       </div>
 
@@ -209,7 +209,7 @@ function FichaCard({ patient, compact = false }) {
           {p.alertas.length > 0 && (
             <div style={{ background: p.estado === "vencida" ? C.redLight : C.amberLight, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
               {p.alertas.map((a, i) => (
-                <div key={i} style={{ fontSize: 11, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
+                <div key={i} style={{ fontSize: 15, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
                   <span>⚠</span><span>{a}</span>
                 </div>
               ))}
@@ -218,13 +218,13 @@ function FichaCard({ patient, compact = false }) {
 
           {/* Receta */}
           <div>
-            <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Receta · {p.receta.fecha}</div>
+            <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Receta · {p.receta.fecha}</div>
             <div style={{ background: C.bgDeep, borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}` }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace" }}>
                 <thead>
                   <tr style={{ background: C.blue }}>
                     {["", "Esf.", "Cil.", "Eje", "AV"].map(h => (
-                      <th key={h} style={{ padding: "5px 8px", color: "#fff", fontWeight: 500, textAlign: "center", fontSize: 10 }}>{h}</th>
+                      <th key={h} style={{ padding: "5px 8px", color: "#fff", fontWeight: 500, textAlign: "center", fontSize: 14 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -240,7 +240,7 @@ function FichaCard({ patient, compact = false }) {
                 </tbody>
               </table>
               {p.receta.adicion && (
-                <div style={{ padding: "5px 10px", fontSize: 10, color: C.inkMid, display: "flex", justifyContent: "space-between" }}>
+                <div style={{ padding: "5px 10px", fontSize: 14, color: C.inkMid, display: "flex", justifyContent: "space-between" }}>
                   <span>Adición: <strong>{p.receta.adicion}</strong></span>
                   <span>DP: <strong>{p.receta.dp}</strong></span>
                   <span>Tipo: <strong>{p.receta.tipo}</strong></span>
@@ -248,7 +248,7 @@ function FichaCard({ patient, compact = false }) {
               )}
             </div>
             {p.receta.notas && (
-              <div style={{ marginTop: 5, fontSize: 10, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", fontStyle: "italic", padding: "4px 6px", borderLeft: `2px solid ${C.blue}` }}>
+              <div style={{ marginTop: 5, fontSize: 14, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", fontStyle: "italic", padding: "4px 6px", borderLeft: `2px solid ${C.blue}` }}>
                 {p.receta.notas}
               </div>
             )}
@@ -257,14 +257,14 @@ function FichaCard({ patient, compact = false }) {
           {/* Control */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>Próximo control</div>
-              <div style={{ fontSize: 12, color: C.ink, fontWeight: 600 }}>{p.nextControl}</div>
+              <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>Próximo control</div>
+              <div style={{ fontSize: 14, color: C.ink, fontWeight: 600 }}>{p.nextControl}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
+              <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
                 {days < 0 ? `Hace ${Math.abs(days)} días` : `En ${days} días`}
               </div>
-              <div style={{ fontSize: 11, color: C.inkMid }}>{p.producto}</div>
+              <div style={{ fontSize: 15, color: C.inkMid }}>{p.producto}</div>
             </div>
           </div>
         </div>
@@ -291,10 +291,10 @@ function ReminderCard({ patient }) {
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <span style={{ fontSize: 18 }}>{isVencida ? "📋" : "⏰"}</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: isVencida ? C.red : C.amber, marginBottom: 3, fontFamily: "'Playfair Display', serif" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: isVencida ? C.red : C.amber, marginBottom: 3, fontFamily: "'Playfair Display', serif" }}>
             {isVencida ? "Receta vencida" : "Control próximo"}
           </div>
-          <div style={{ fontSize: 11, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 15, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5 }}>
             Última receta: <strong>{p.receta.fecha}</strong><br />
             Optometrista: {p.receta.optometrista}<br />
             Próximo control: <strong>{p.nextControl}</strong>
@@ -303,7 +303,7 @@ function ReminderCard({ patient }) {
           <button style={{
             marginTop: 8, background: isVencida ? C.red : C.amber,
             color: "#fff", border: "none", borderRadius: 5,
-            padding: "6px 12px", fontSize: 11, cursor: "pointer",
+            padding: "6px 12px", fontSize: 15, cursor: "pointer",
             fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
           }}>
             Agendar control →
@@ -338,12 +338,12 @@ function Bubble({ msg, isLast }) {
       {isBot && (
         <div style={{
           width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-          background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
+          background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
         }}>👁️</div>
       )}
       <div style={{ maxWidth: "78%", display: "flex", flexDirection: "column", gap: 2, alignItems: isBot ? "flex-start" : "flex-end" }}>
         {isBot && (
-          <span style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginLeft: 2 }}>
+          <span style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginLeft: 2 }}>
             Lente · {msg.ts}
           </span>
         )}
@@ -352,7 +352,7 @@ function Bubble({ msg, isLast }) {
           borderRadius: isBot ? "3px 14px 14px 14px" : "14px 3px 14px 14px",
           background: isBot ? C.surface : C.blue,
           color: isBot ? C.ink : "#fff",
-          fontSize: 13, lineHeight: 1.6,
+          fontSize: 15, lineHeight: 1.6,
           border: isBot ? `1px solid ${C.border}` : "none",
           fontFamily: "'DM Sans', sans-serif",
           boxShadow: isBot ? "0 1px 4px rgba(0,0,0,.06)" : `0 2px 8px ${C.blue}50`,
@@ -361,7 +361,7 @@ function Bubble({ msg, isLast }) {
           {msg.content}
         </div>
         {!isBot && (
-          <span style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginRight: 2 }}>
+          <span style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginRight: 2 }}>
             {msg.ts}
           </span>
         )}
@@ -376,7 +376,7 @@ function Bubble({ msg, isLast }) {
 function Typing() {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-      <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>👁️</div>
+      <div style={{ width: 26, height: 26, borderRadius: "50%", background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👁️</div>
       <div style={{ padding: "10px 14px", background: C.surface, borderRadius: "3px 14px 14px 14px", border: `1px solid ${C.border}`, display: "flex", gap: 4, alignItems: "center" }}>
         {[0, 1, 2].map(i => (
           <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: C.blue, opacity: 0.5, animation: "dot 1.2s infinite", animationDelay: `${i * 0.2}s` }} />
@@ -420,12 +420,12 @@ function PanelFichas({ onSelectPatient, activePatient }) {
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: C.bg }}>
       {/* Header panel */}
       <div style={{ padding: "16px 16px 12px", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 11, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
+        <div style={{ fontSize: 15, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
           Fichas de pacientes
         </div>
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por nombre o RUT..."
-          style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: "7px 10px", fontSize: 12, color: C.ink, outline: "none", fontFamily: "'IBM Plex Mono', monospace" }} />
+          style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: "7px 10px", fontSize: 14, color: C.ink, outline: "none", fontFamily: "'IBM Plex Mono', monospace" }} />
 
         {/* Filtros */}
         <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
@@ -459,17 +459,17 @@ function PanelFichas({ onSelectPatient, activePatient }) {
             onMouseLeave={e => { if (activePatient?.id !== p.id) e.currentTarget.style.background = C.surface; }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginTop: 1 }}>{p.rut} · {p.age} años</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
+                <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginTop: 1 }}>{p.rut} · {p.age} años</div>
               </div>
               <StatePill estado={p.estado} />
             </div>
             {p.alertas.length > 0 && (
-              <div style={{ marginTop: 5, fontSize: 10, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace" }}>
+              <div style={{ marginTop: 5, fontSize: 14, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace" }}>
                 ⚠ {p.alertas[0]}
               </div>
             )}
-            <div style={{ marginTop: 4, fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
+            <div style={{ marginTop: 4, fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
               Último control: {p.lastVisit}
             </div>
           </div>
@@ -478,10 +478,10 @@ function PanelFichas({ onSelectPatient, activePatient }) {
 
       {/* Resumen alertas */}
       <div style={{ padding: "10px 12px", borderTop: `1px solid ${C.border}`, background: C.bgDeep }}>
-        <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 5 }}>RESUMEN DE ALERTAS</div>
+        <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 5 }}>RESUMEN DE ALERTAS</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {patients.filter(p => p.alertas.length > 0).map(p => (
-            <div key={p.id} style={{ fontSize: 10, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
+            <div key={p.id} style={{ fontSize: 14, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
               <span>·</span><span>{p.name}: {p.alertas[0]}</span>
             </div>
           ))}
@@ -605,7 +605,7 @@ function Chat({ activePatient, allPatients = [] }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ADE80", boxShadow: "0 0 4px #4ADE80" }} />
-            <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }}>
+            <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, fontFamily: "'IBM Plex Mono', monospace" }}>
               {detectedPatient ? `Paciente: ${detectedPatient.name}` : "En línea · responde al instante"}
             </span>
           </div>
@@ -633,7 +633,7 @@ function Chat({ activePatient, allPatients = [] }) {
             <button key={r} onClick={() => sendMessage(r)} style={{
               background: C.surface, border: `1px solid ${C.border}`,
               borderRadius: 14, padding: "5px 11px",
-              color: C.inkMid, fontSize: 11, cursor: "pointer",
+              color: C.inkMid, fontSize: 15, cursor: "pointer",
               fontFamily: "'IBM Plex Mono', monospace",
               transition: "all .15s",
             }}
@@ -651,12 +651,12 @@ function Chat({ activePatient, allPatients = [] }) {
           onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
           placeholder={detectedPatient ? `Tomar el control del chat y escribir a ${detectedPatient.name.split(" ")[0]}...` : "Escribe tu consulta..."}
           disabled={loading}
-          style={{ flex: 1, background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: C.ink, outline: "none", fontFamily: "'Inter', sans-serif", opacity: loading ? 0.6 : 1 }}
+          style={{ flex: 1, background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 15, color: C.ink, outline: "none", fontFamily: "'Inter', sans-serif", opacity: loading ? 0.6 : 1 }}
           onFocus={e => e.target.style.borderColor = C.blue}
           onBlur={e => e.target.style.borderColor = C.border}
         />
         <button onClick={() => sendMessage(input)} disabled={!input.trim() || loading}
-          style={{ background: input.trim() && !loading ? C.amber : C.bgDeep, color: input.trim() && !loading ? "#000" : C.inkFaint, border: "none", borderRadius: 8, padding: "0 16px", cursor: input.trim() && !loading ? "pointer" : "default", fontSize: 13, fontWeight: 700, transition: "all .2s", flexShrink: 0 }}>
+          style={{ background: input.trim() && !loading ? C.amber : C.bgDeep, color: input.trim() && !loading ? "#000" : C.inkFaint, border: "none", borderRadius: 8, padding: "0 16px", cursor: input.trim() && !loading ? "pointer" : "default", fontSize: 15, fontWeight: 700, transition: "all .2s", flexShrink: 0 }}>
           {loading ? "..." : "Interrumpir IA"}
         </button>
       </div>
@@ -707,7 +707,7 @@ export default function AukenOptica() {
           <div>
             <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: C.ink }}>Óptica Glow Vision</span>
             <span style={{ color: C.border, margin: "0 8px" }}>·</span>
-            <span style={{ fontSize: 11, color: C.amber, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>[MODO MONITOR]</span>
+            <span style={{ fontSize: 15, color: C.amber, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>[MODO MONITOR]</span>
           </div>
         </div>
 
@@ -718,7 +718,7 @@ export default function AukenOptica() {
               background: view === val ? C.surface : "transparent",
               color: view === val ? C.blue : C.inkFaint,
               border: view === val ? `1px solid ${C.border}` : "1px solid transparent",
-              borderRadius: 5, padding: "4px 12px", fontSize: 11, cursor: "pointer",
+              borderRadius: 5, padding: "4px 12px", fontSize: 15, cursor: "pointer",
               fontFamily: "'IBM Plex Mono', monospace",
               boxShadow: view === val ? "0 1px 3px rgba(0,0,0,.08)" : "none",
               transition: "all .15s",
@@ -729,11 +729,11 @@ export default function AukenOptica() {
         {/* Alertas badge */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ background: C.redLight, border: `1px solid ${C.red}40`, borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ fontSize: 10, color: C.red, fontFamily: "'IBM Plex Mono', monospace" }}>
+            <span style={{ fontSize: 14, color: C.red, fontFamily: "'IBM Plex Mono', monospace" }}>
               ⚠ {alertCount} alertas pendientes
             </span>
           </div>
-          <div style={{ width: 28, height: 28, background: C.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>
+          <div style={{ width: 28, height: 28, background: C.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace" }}>
             VC
           </div>
         </div>
@@ -758,7 +758,7 @@ export default function AukenOptica() {
 
       {/* Instrucción demo */}
       {view === "split" && !activePatient && (
-        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", background: C.blue, color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", pointerEvents: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,.2)" }}>
+        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", background: C.blue, color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace", pointerEvents: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,.2)" }}>
           ← Selecciona un paciente para simular una conversación personalizada
         </div>
       )}
