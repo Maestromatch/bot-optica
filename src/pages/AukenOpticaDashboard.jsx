@@ -193,11 +193,84 @@ function OpticaDetail({ optica: o }) {
         </div>
       )}
 
-      {tab !== "metricas" && (
+      {tab === "pacientes" && (
         <Fade>
-          <GlassCard style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", borderStyle: "dashed" }}>
+          <GlassCard style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Base de Datos CRM</div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ fontSize: 13, background: `${C.neonGreen}20`, color: C.neonGreen, padding: "4px 12px", borderRadius: 20, fontWeight: 500 }}>{o.pacientesList?.length || 0} Registros</div>
+              </div>
+            </div>
+            
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                <thead>
+                  <tr style={{ background: `${C.surfaceL}80` }}>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Paciente / Lead</th>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Contacto</th>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Origen / Notas</th>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {o.pacientesList && o.pacientesList.length > 0 ? o.pacientesList.map((p, i) => {
+                    // Determinar si es un lead de operativo
+                    const isOperativo = p.notas_clinicas?.toLowerCase().includes("operativo") || p.producto_actual?.toLowerCase().includes("operativo");
+                    
+                    return (
+                      <tr key={p.id || i} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{p.nombre}</div>
+                          <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>RUT: {p.rut}</div>
+                          {isOperativo && (
+                            <div style={{ display: "inline-block", marginTop: 8, fontSize: 10, background: `${C.neonBlue}20`, color: C.neonBlue, padding: "2px 8px", borderRadius: 12, fontWeight: 600, border: `1px solid ${C.neonBlue}40` }}>
+                              LEAD OPERATIVO
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ fontSize: 13, color: C.text }}>{p.telefono}</div>
+                          <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Ingreso: {p.fecha_ultima_visita || "Reciente"}</div>
+                        </td>
+                        <td style={{ padding: "16px 24px", maxWidth: 250 }}>
+                          <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            {p.notas_clinicas || "Sin notas"}
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <a 
+                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reserva+Operativo+-+${encodeURIComponent(p.nombre)}&details=Teléfono:+${encodeURIComponent(p.telefono)}%0A%0A${encodeURIComponent(p.notas_clinicas || "")}`} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = C.neonBlue; e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = `${C.neonBlue}20`; e.currentTarget.style.color = C.neonBlue; }}
+                          >
+                            📅 Agendar en Google
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan="4" style={{ padding: "40px", textAlign: "center", color: C.textDim, fontSize: 14 }}>
+                        Aún no hay pacientes o leads capturados.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+        </Fade>
+      )}
+
+      {tab === "campañas ia" && (
+        <Fade>
+          <GlassCard style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", borderStyle: "dashed", borderColor: C.border }}>
             <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.5 }}>🚧</div>
-            <div style={{ fontSize: 14, color: C.textDim }}>Módulo de {tab} en desarrollo.</div>
+            <div style={{ fontSize: 14, color: C.textDim }}>El módulo de Campañas IA (Mensajes Masivos) está en desarrollo para la próxima fase.</div>
           </GlassCard>
         </Fade>
       )}
@@ -246,6 +319,7 @@ export default function AukenOpticaDashboard() {
         weeklyConsultas: [1, 2, 0, 1, 3, 2, 1, 4, 2, 3, 1, 5],
         weeklyRecuperados: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
         alertas: vencidas > 0 ? [`${vencidas} recetas vencidas pendientes de contactar`] : [],
+        pacientesList: data.sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0)),
       }));
 
       setLoading(false);
