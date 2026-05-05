@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-
+import Vapi from "@vapi-ai/web";
 // ── PALETA FUTURISTA (Dark Mode No Invasivo) ───────────────────
 const C = {
   bg:         "#090A0F", // Fondo muy oscuro, casi negro con tono azulado
@@ -181,7 +181,7 @@ function SalesChart({ pacientes }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient }) {
+function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient, vapiCallStatus, handleStartVapiCall, handleStopVapiCall }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -226,7 +226,8 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
         {[
           { id: "metricas", label: "Métricas" },
           { id: "pacientes", label: "Pacientes" },
-          { id: "campanas", label: "Campañas IA" }
+          { id: "campanas", label: "Campañas IA" },
+          { id: "llamadas", label: "Llamadas IA 🎙️" }
         ].map(t => {
           const active = tab === t.id;
           return (
@@ -543,6 +544,57 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
           </GlassCard>
         </div>
       )}
+
+      {tab === "llamadas" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonRed}`, background: `linear-gradient(180deg, ${C.surface} 0%, ${C.bg} 100%)` }}>
+            <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Asistente de Voz Aukén (Fase Beta) 🎙️</div>
+                <div style={{ fontSize: 14, color: C.textDim }}>IA conversacional con voz humana para agendar pacientes y hacer seguimiento telefónico.</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: `${vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed}15`, padding: "8px 16px", borderRadius: 8, border: `1px solid ${vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed}40` }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed, boxShadow: `0 0 10px ${vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed}` }} />
+                <span style={{ color: vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed, fontSize: 13, fontWeight: 600 }}>
+                  {vapiCallStatus === 'connected' ? 'Escuchando...' : vapiCallStatus === 'speaking' ? 'Aukén Hablando 🗣️' : vapiCallStatus === 'connecting' ? 'Conectando...' : 'Motor Desconectado'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+              {/* Controles de Llamada */}
+              <div style={{ background: C.surfaceL, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
+                <h4 style={{ fontSize: 14, color: C.textDim, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.05em" }}>Simulador de Llamada Entrante</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <select style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "12px", borderRadius: 8, outline: "none" }}>
+                    <option value="">Simular contexto de llamada entrante...</option>
+                    <option value="agenda">Paciente quiere agendar hora médica</option>
+                    <option value="dudas">Paciente tiene dudas sobre horario/ubicación</option>
+                  </select>
+                  <button onClick={vapiCallStatus === 'disconnected' ? handleStartVapiCall : handleStopVapiCall} style={{ background: `linear-gradient(90deg, ${vapiCallStatus === 'disconnected' ? C.neonGreen : C.neonRed}, ${vapiCallStatus === 'disconnected' ? '#10B981' : '#E11D48'})`, color: "#fff", border: "none", borderRadius: 8, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 8, boxShadow: `0 4px 15px ${vapiCallStatus === 'disconnected' ? C.neonGreen : C.neonRed}40`, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
+                    {vapiCallStatus === 'disconnected' ? '📞 Hablar con Aukén' : '🛑 Cortar Llamada'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Registro de Llamadas */}
+              <div style={{ background: C.surfaceL, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24, display: "flex", flexDirection: "column" }}>
+                <h4 style={{ fontSize: 14, color: C.textDim, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.05em", display: "flex", justifyContent: "space-between" }}>
+                  <span>Historial de Llamadas</span>
+                  <span style={{ fontSize: 12, background: C.bg, padding: "2px 8px", borderRadius: 12 }}>Hoy</span>
+                </h4>
+                
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", border: `1px dashed ${C.border}`, borderRadius: 8, padding: 32 }}>
+                  <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.5 }}>📭</div>
+                  <div style={{ color: C.textDim, fontSize: 13, textAlign: "center", maxWidth: "80%" }}>
+                    No hay llamadas registradas aún. El historial y las grabaciones aparecerán aquí.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
     </div>
   );
 }
@@ -552,6 +604,40 @@ export default function AukenOpticaDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
+  const [vapiCallStatus, setVapiCallStatus] = useState("disconnected");
+  const [vapiInstance, setVapiInstance] = useState(null);
+
+  useEffect(() => {
+    try {
+      const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
+      if (pubKey) {
+        const vapi = new Vapi(pubKey);
+        vapi.on("call-start", () => setVapiCallStatus("connected"));
+        vapi.on("call-end", () => setVapiCallStatus("disconnected"));
+        vapi.on("speech-start", () => setVapiCallStatus("speaking"));
+        vapi.on("speech-end", () => setVapiCallStatus("connected"));
+        setVapiInstance(vapi);
+      }
+    } catch (err) {
+      console.log("Vapi no inicializado", err);
+    }
+  }, []);
+
+  const handleStartVapiCall = async () => {
+    if (!vapiInstance) return alert("Vapi no configurado.");
+    try {
+      setVapiCallStatus("connecting");
+      await vapiInstance.start(import.meta.env.VITE_VAPI_ASSISTANT_ID);
+    } catch (e) {
+      console.error(e);
+      setVapiCallStatus("disconnected");
+      alert("Error al conectar con Vapi");
+    }
+  };
+
+  const handleStopVapiCall = () => {
+    if (vapiInstance) vapiInstance.stop();
+  };
   const [showModal, setShowModal] = useState(false);
   const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -669,9 +755,9 @@ export default function AukenOpticaDashboard() {
         const normalized = data.map(p => ({
           ...p,
           recetaImgUrl: p.receta_img_url || p.recetaImgUrl || null
-        })).sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0)),
-      }));
-
+        })).sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0));
+        refreshStats(normalized);
+      }
       setLoading(false);
     }
     fetchData();
@@ -753,6 +839,9 @@ export default function AukenOpticaDashboard() {
               sucursalFilter={sucursalFilter}
               setEditingPatient={setEditingPatient}
               setSelectedPatient={setSelectedPatient}
+              vapiCallStatus={vapiCallStatus}
+              handleStartVapiCall={handleStartVapiCall}
+              handleStopVapiCall={handleStopVapiCall}
             />
           </Fade>
         )}
