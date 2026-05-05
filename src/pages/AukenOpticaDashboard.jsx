@@ -31,6 +31,11 @@ const MI_OPTICA = {
   since: "2025-01-15",
   owner: "Administrador", 
   phone: "+56987654321",
+  automations: {
+    thanks: true,
+    adjustment: true,
+    expiration: true
+  }
 };
 
 // ── MICRO-COMPONENTES ────────────────────────────────────────────
@@ -459,41 +464,77 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
       )}
 
       {tab === "campanas" && (
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* 1. AUTOMATIZACIONES DE RETENCIÓN */}
+          <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonGreen}`, background: `linear-gradient(180deg, ${C.surface} 0%, ${C.bg} 100%)` }}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Motor de Retención Automática 🤖</div>
+              <div style={{ fontSize: 14, color: C.textDim }}>La IA contactará a tus pacientes en momentos clave sin que tengas que hacer nada.</div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {[
+                { id: "thanks", title: "Gracias por tu Compra", desc: "Se envía 3 días después de la venta.", icon: "✨" },
+                { id: "adjustment", title: "Ajuste de Comodidad", desc: "Se envía 1 mes después para fidelizar.", icon: "👓" },
+                { id: "expiration", title: "Recordatorio de Receta", desc: "Se envía a los 11 meses del control.", icon: "📅" }
+              ].map(auto => (
+                <div key={auto.id} style={{ background: C.surfaceL, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, transition: "0.2s" }}>
+                  <div style={{ fontSize: 24, marginBottom: 12 }}>{auto.icon}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{auto.title}</div>
+                  <div style={{ fontSize: 12, color: C.textDim, marginBottom: 16, lineHeight: "1.4" }}>{auto.desc}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: o.automations?.[auto.id] ? C.neonGreen : C.textMuted, fontWeight: 600 }}>{o.automations?.[auto.id] ? "ACTIVADO" : "DESACTIVADO"}</span>
+                    <div 
+                      onClick={() => setOpticaData({...o, automations: {...o.automations, [auto.id]: !o.automations?.[auto.id]}})}
+                      style={{ width: 44, height: 22, background: o.automations?.[auto.id] ? C.neonGreen : C.border, borderRadius: 20, cursor: "pointer", position: "relative", transition: "0.3s" }}
+                    >
+                      <div style={{ position: "absolute", top: 2, left: o.automations?.[auto.id] ? 24 : 2, width: 18, height: 18, background: "#fff", borderRadius: "50%", transition: "0.3s" }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* 2. GENERADOR DE CAMPAÑAS MASIVAS */}
           <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonAmber}` }}>
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Generador de Campañas Masivas 🚀</div>
-              <div style={{ fontSize: 14, color: C.textDim }}>Envía mensajes personalizados de WhatsApp a múltiples prospectos con un solo clic.</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Campañas de Captura Masiva 🚀</div>
+              <div style={{ fontSize: 14, color: C.textDim }}>Envía promociones personalizadas a grupos específicos de pacientes.</div>
             </div>
 
             <div style={{ display: "flex", gap: 32 }}>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>1. Audiencia (A quién enviar)</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Paso 1: Seleccionar Audiencia</label>
                   <select style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "10px 14px", borderRadius: 8, outline: "none" }}>
-                    <option>Todos los pacientes ({o.patients})</option>
+                    <option>Pacientes que NO compraron ({o.pacientesList.filter(p => p.estado_compra === "No Compró").length})</option>
                     <option>Solo Recetas Vencidas ({o.recetasVencidas})</option>
                     <option>Leads de Operativos Recientes</option>
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>2. ¿Qué quieres vender/informar?</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Paso 2: Objetivo de la Campaña</label>
                   <textarea 
                     rows={4} 
                     placeholder="Ej: Estaré este viernes en Punitaqui con 50% de descuento en cristales. Pregúntales a qué hora pueden venir..."
-                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "12px", borderRadius: 8, resize: "none", outline: "none", fontFamily: "'Inter', sans-serif" }}
+                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "12px", borderRadius: 8, resize: "none", outline: "none", fontFamily: "'Inter', sans-serif", fontSize: 13 }}
                   />
                 </div>
-                <button style={{ background: `linear-gradient(90deg, ${C.neonAmber}, #F59E0B)`, color: "#000", border: "none", borderRadius: 8, padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>
-                  Lanzar Campaña IA
+                <button style={{ background: `linear-gradient(90deg, ${C.neonAmber}, #F59E0B)`, color: "#000", border: "none", borderRadius: 8, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 8, boxShadow: `0 4px 15px ${C.neonAmber}30` }}>
+                  ⚡ Lanzar Campaña con IA
                 </button>
               </div>
 
-              <div style={{ flex: 1, background: C.bg, borderRadius: 12, padding: 20, border: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Vista Previa del Mensaje (Ejemplo)</div>
-                <div style={{ background: "#054D44", padding: "12px 16px", borderRadius: "12px 12px 12px 0", color: "#E9EDEF", fontSize: 14, maxWidth: "90%", boxShadow: "0 2px 5px rgba(0,0,0,0.2)" }}>
-                  ¡Hola Juan! Soy Aukén de Óptica Glow Vision 😎. Vi que tu receta venció el año pasado y justo este viernes estaremos en Punitaqui con 50% de descuento en cristales. ¿Te anoto para una revisión rápida? Es gratis.
-                </div>
+              <div style={{ flex: 1 }}>
+                 <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Vista Previa IA</div>
+                 <div style={{ background: C.bg, borderRadius: 12, padding: 20, border: `1px solid ${C.border}`, position: "relative" }}>
+                    <div style={{ background: "#054D44", padding: "12px 16px", borderRadius: "12px 12px 12px 0", color: "#E9EDEF", fontSize: 13, maxWidth: "90%", boxShadow: "0 2px 5px rgba(0,0,0,0.2)", lineHeight: "1.5" }}>
+                      ¡Hola Juan! Soy Aukén de Óptica Glow Vision 😎. Vi que estuviste en nuestro operativo pero no concretaste tus lentes. <br/><br/>
+                      Justo este viernes volveremos a Punitaqui con una promo especial de 50% de descuento en cristales solo para quienes ya se evaluaron. ¿Te gustaría que te reservemos un cupo para elegir tu marco?
+                    </div>
+                    <div style={{ fontSize: 10, color: C.textMuted, marginTop: 12, textAlign: "right" }}>Enviado vía WhatsApp Business API</div>
+                 </div>
               </div>
             </div>
           </GlassCard>
