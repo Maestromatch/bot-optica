@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-// import Vapi from "@vapi-ai/web";
+import Vapi from "@vapi-ai/web";
 // ── PALETA FUTURISTA (Dark Mode No Invasivo) ───────────────────
 const C = {
   bg:         "#090A0F", // Fondo muy oscuro, casi negro con tono azulado
@@ -224,7 +224,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 28, color: C.text }}>{o?.name}</div>
-              <button onClick={() => setShowProfileModal(true)} style={{ background: "transparent", border: "none", color: C.neonBlue, cursor: "pointer", fontSize: 16, opacity: 0.7 }}>✏️</button>
+              <button onClick={() => { setEditingProfile(o); setShowProfileModal(true); }} style={{ background: "transparent", border: "none", color: C.neonBlue, cursor: "pointer", fontSize: 16, opacity: 0.7 }}>✏️</button>
             </div>
             <div style={{ fontSize: 13, color: C.textDim, marginTop: 4 }}>
               {o?.city} · Gestor: {o?.owner} · {o?.phone}
@@ -631,8 +631,8 @@ export default function AukenOpticaDashboard() {
     try {
       const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
       if (pubKey && typeof Vapi !== 'undefined') {
-        // const vapi = new Vapi(pubKey);
-        // setVapiInstance(vapi);
+        const vapi = new Vapi(pubKey);
+        setVapiInstance(vapi);
       }
     } catch (err) {
       console.warn("Vapi skip:", err);
@@ -1163,24 +1163,21 @@ export default function AukenOpticaDashboard() {
                 <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Ubicación Principal</label>
                 <input value={editingProfile.city} onChange={e => setEditingProfile({...editingProfile, city: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Teléfono Contacto</label>
                   <input value={editingProfile.phone} onChange={e => setEditingProfile({...editingProfile, phone: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Plan</label>
-                  <select value={editingProfile.plan} onChange={e => setEditingProfile({...editingProfile, plan: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }}>
-                    <option>Aukén Basic</option>
-                    <option>Aukén Pro</option>
-                    <option>Multi-Sucursal</option>
-                  </select>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
                 <button onClick={() => setShowProfileModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
                 <button onClick={() => {
-                  setOpticaData(prev => ({ ...prev, ...editingProfile }));
+                  setOpticaData(prev => ({ 
+                    ...prev, 
+                    name: editingProfile.name,
+                    city: editingProfile.city,
+                    phone: editingProfile.phone
+                  }));
                   setShowProfileModal(false);
                   alert("Perfil actualizado correctamente");
                 }} style={{ flex: 1, background: C.neonBlue, color: "#fff", border: "none", padding: 12, borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>💾 Guardar Cambios</button>
