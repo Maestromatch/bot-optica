@@ -50,31 +50,34 @@ const FEATURES = [
 
 const PLANS = [
   {
-    name: "Visión Base",
-    monthly: "150.000",
-    setup: "400.000",
-    desc: "Para ópticas que quieren no perder ninguna consulta.",
-    features: ["Chat web + WhatsApp 24/7", "Ficha de hasta 200 pacientes", "Recordatorios básicos de control", "Reporte semanal"],
-    cta: "Activar Visión Base",
+    name: "Plan Mensual",
+    monthly: "89.990",
+    setup: "150.000",
+    desc: "Ideal para comenzar a automatizar tu óptica sin grandes riesgos.",
+    features: ["Carga de pacientes (Excel)", "Hasta 1.000 pacientes activos", "Recordatorios automáticos WhatsApp", "Dashboard Premium Dark Mode", "Agendamiento Inteligente", "Soporte vía chat"],
+    cta: "Elegir Mensual",
     highlight: false,
+    period: "/mes"
   },
   {
-    name: "Visión Pro",
-    monthly: "250.000",
-    setup: "600.000",
-    desc: "Para ópticas que quieren recuperar pacientes perdidos.",
-    features: ["Todo lo anterior", "Fichas ilimitadas", "Recordatorios automáticos WhatsApp", "Instagram DM activo", "Panel de alertas y métricas", "Soporte directo"],
-    cta: "Activar Visión Pro",
+    name: "Plan Anual",
+    monthly: "890.000",
+    setup: "GRATIS",
+    desc: "Para ópticas consolidadas. Ahorras $329.880 respecto al mensual.",
+    features: ["Instalación $0 (Ahorras $150k)", "Pacientes Ilimitados (Sube tu Excel de 50 o 5.000)", "Campañas IA Masivas Ilimitadas", "2 Meses Gratis Incluidos", "Asesoría de Ventas Mensual", "Prioridad de Soporte 24/7"],
+    cta: "Elegir Anual",
     highlight: true,
+    period: "/año"
   },
   {
-    name: "Visión Total",
-    monthly: "380.000",
-    setup: "900.000",
-    desc: "Para cadenas y ópticas con múltiples sucursales.",
-    features: ["Todo lo anterior", "Múltiples sucursales", "CRM de pacientes avanzado", "Reportes ejecutivos mensuales", "Reunión mensual de optimización", "API personalizada"],
-    cta: "Activar Visión Total",
+    name: "Multi-Sucursal",
+    monthly: "A Medida",
+    setup: "A Medida",
+    desc: "Para cadenas de ópticas que requieren un ecosistema centralizado.",
+    features: ["Todo lo del Plan Anual", "Múltiples sucursales en 1 Dashboard", "Roles de Vendedores (Multi-Tenant)", "Reportes Ejecutivos por Local", "API Personalizada (Integraciones)", "Soporte Presencial/Videollamada"],
+    cta: "Cotizar a Medida",
     highlight: false,
+    period: ""
   },
 ];
 
@@ -147,9 +150,9 @@ function ContactForm() {
         <label style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 5 }}>Plan de interés</label>
         <select value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))}
           style={{ width: "100%", background: C.white, border: `1px solid ${C.border}`, borderRadius: 4, padding: "10px 12px", fontSize: 13, color: C.ink, fontFamily: "'IBM Plex Mono', monospace" }}>
-          <option value="base">Visión Base · $150.000/mes</option>
-          <option value="pro">Visión Pro · $250.000/mes</option>
-          <option value="total">Visión Total · $380.000/mes</option>
+          <option value="mensual">Plan Mensual · $89.990/mes</option>
+          <option value="anual">Plan Anual · $890.000/año</option>
+          <option value="multisucursal">Plan Multi-Sucursal</option>
         </select>
       </div>
       <button onClick={() => form.nombre && form.whatsapp && setSent(true)}
@@ -379,10 +382,10 @@ export default function AukenOpticaLanding() {
                     <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 36, color: plan.highlight ? "#fff" : C.cobalt }}>
                       ${plan.monthly}
                     </span>
-                    <span style={{ fontSize: 12, color: plan.highlight ? "rgba(255,255,255,.6)" : C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>/mes CLP</span>
+                    <span style={{ fontSize: 12, color: plan.highlight ? "rgba(255,255,255,.6)" : C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{plan.period}</span>
                   </div>
-                  <div style={{ fontSize: 10, color: plan.highlight ? "rgba(255,255,255,.5)" : C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 22 }}>
-                    + ${plan.setup} CLP implementación
+                  <div style={{ fontSize: 10, color: plan.highlight ? "rgba(255,255,255,.5)" : C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 22, textTransform: "uppercase" }}>
+                    + {plan.setup === "GRATIS" || plan.setup === "A Medida" ? plan.setup : `$${plan.setup} CLP`} implementación
                   </div>
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 9, marginBottom: 24 }}>
                     {plan.features.map(f => (

@@ -83,7 +83,7 @@ function GlassCard({ children, style = {} }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o, showModal, setShowModal }) {
+function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -187,7 +187,16 @@ function OpticaDetail({ optica: o, showModal, setShowModal }) {
                     <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 16px", background: `${C.neonRed}10`, borderLeft: `2px solid ${C.neonRed}`, borderRadius: 8 }}>
                       <div style={{ color: C.neonRed, fontSize: 18 }}>⚠️</div>
                       <div style={{ flex: 1, fontSize: 13, color: C.text, fontWeight: 500 }}>{a}</div>
-                      <button style={{ background: C.neonRed, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Resolver</button>
+                      <button 
+                        onClick={() => {
+                          setOpticaData(prev => ({
+                            ...prev,
+                            alertas: prev.alertas.filter((_, index) => index !== i)
+                          }));
+                        }}
+                        style={{ background: C.neonRed, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                        Resolver
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -444,7 +453,7 @@ export default function AukenOpticaDashboard() {
           </div>
         ) : (
           <Fade>
-            <OpticaDetail optica={opticaData} showModal={showModal} setShowModal={setShowModal} />
+            <OpticaDetail optica={opticaData} setOpticaData={setOpticaData} showModal={showModal} setShowModal={setShowModal} />
           </Fade>
         )}
       </div>
