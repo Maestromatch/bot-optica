@@ -3,3 +3,8 @@ dist
 .env
 .DS_Store
 *.local
+
+.vercel
+.env*.local
+*.pdf
+*.docx

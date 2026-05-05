@@ -50,78 +50,8 @@ const C = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// DATOS MOCK — FICHAS DE PACIENTES
+// DATOS REALES — se cargan desde Supabase en PanelFichas
 // ─────────────────────────────────────────────────────────────────
-const PATIENTS_DB = [
-  {
-    id: "p001", rut: "12.345.678-9",
-    name: "María González", age: 42, phone: "+56912345678",
-    lastVisit: "2024-08-14",
-    nextControl: "2025-08-14",
-    receta: {
-      fecha: "14 Agosto 2024",
-      od: { esf: "-2.50", cil: "-0.75", eje: "180°", av: "10/10" },
-      oi: { esf: "-3.00", cil: "-1.00", eje: "175°", av: "10/10" },
-      adicion: "+1.50",
-      dp: "62mm",
-      tipo: "Multifocal progresivo",
-      notas: "Uso prolongado de pantallas. Recomendar filtro azul.",
-      optometrista: "Dra. Valeria Rojas",
-    },
-    historial: [
-      { fecha: "2023-02-10", motivo: "Control anual", cambio: "Aumento de -0.25 en OD" },
-      { fecha: "2022-01-20", motivo: "Primera consulta", cambio: "Diagnóstico inicial miopía bilateral" },
-    ],
-    producto: "Hoya Hilux 1.67 Antirreflex",
-    estado: "vencida", // proxima | vigente | vencida
-    alertas: ["Receta vencida hace 3 meses", "Control pendiente"],
-  },
-  {
-    id: "p002", rut: "8.901.234-5",
-    name: "Carlos Méndez", age: 67, phone: "+56987654321",
-    lastVisit: "2025-01-20",
-    nextControl: "2025-07-20",
-    receta: {
-      fecha: "20 Enero 2025",
-      od: { esf: "+1.75", cil: "-0.50", eje: "90°", av: "9/10" },
-      oi: { esf: "+2.00", cil: "-0.75", eje: "85°", av: "9/10" },
-      adicion: "+2.50",
-      dp: "64mm",
-      tipo: "Bifocal",
-      notas: "Presbicia avanzada. Derivar a oftalmólogo si persisten molestias.",
-      optometrista: "Dr. Patricio Vega",
-    },
-    historial: [
-      { fecha: "2024-01-15", motivo: "Control anual", cambio: "Aumento adición a +2.50" },
-      { fecha: "2023-01-08", motivo: "Control anual", cambio: "Primer diagnóstico presbicia" },
-    ],
-    producto: "Zeiss Bifocal Hardcoating",
-    estado: "proxima",
-    alertas: ["Control en 2 meses"],
-  },
-  {
-    id: "p003", rut: "15.678.901-2",
-    name: "Sofía Herrera", age: 28, phone: "+56955443322",
-    lastVisit: "2025-03-05",
-    nextControl: "2026-03-05",
-    receta: {
-      fecha: "5 Marzo 2025",
-      od: { esf: "-1.00", cil: "0.00", eje: "—", av: "10/10" },
-      oi: { esf: "-1.25", cil: "-0.25", eje: "165°", av: "10/10" },
-      adicion: null,
-      dp: "60mm",
-      tipo: "Monofocal",
-      notas: "Miopía leve. Sin urgencia de corrección permanente.",
-      optometrista: "Dra. Valeria Rojas",
-    },
-    historial: [
-      { fecha: "2024-03-01", motivo: "Primera consulta", cambio: "Diagnóstico miopía leve" },
-    ],
-    producto: "Essilor Crizal Prevencia 1.5",
-    estado: "vigente",
-    alertas: [],
-  },
-];
 
 // ─────────────────────────────────────────────────────────────────
 // SYSTEM PROMPT PARA CLAUDE
@@ -193,9 +123,9 @@ const mkMsg = (role, content, meta = {}) => ({
   ts: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
 });
 
-function findPatient(text) {
+function findPatient(text, patientsList = []) {
   const normalized = text.toLowerCase().replace(/\s/g, "").replace(/[.\-]/g, "");
-  return PATIENTS_DB.find(p => {
+  return patientsList.find(p => {
     const rutClean = p.rut.replace(/[.\-]/g, "").toLowerCase();
     const nameLower = p.name.toLowerCase();
     return normalized.includes(rutClean) ||
@@ -552,7 +482,7 @@ function PanelFichas({ onSelectPatient, activePatient }) {
       <div style={{ padding: "10px 12px", borderTop: `1px solid ${C.border}`, background: C.bgDeep }}>
         <div style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 5 }}>RESUMEN DE ALERTAS</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {PATIENTS_DB.filter(p => p.alertas.length > 0).map(p => (
+          {patients.filter(p => p.alertas.length > 0).map(p => (
             <div key={p.id} style={{ fontSize: 10, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
               <span>·</span><span>{p.name}: {p.alertas[0]}</span>
             </div>
@@ -566,7 +496,7 @@ function PanelFichas({ onSelectPatient, activePatient }) {
 // ─────────────────────────────────────────────────────────────────
 // CHAT PRINCIPAL
 // ─────────────────────────────────────────────────────────────────
-function Chat({ activePatient }) {
+function Chat({ activePatient, allPatients = [] }) {
   const WELCOME = activePatient
     ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a Óptica Visión Clara. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
     : "¡Hola! Soy Lente, el asistente de Óptica Visión Clara. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?";
@@ -606,7 +536,7 @@ function Chat({ activePatient }) {
     // Detectar paciente por RUT o nombre en el texto
     let patient = detectedPatient;
     if (!patient) {
-      const found = findPatient(txt);
+      const found = findPatient(txt, allPatients);
       if (found) {
         patient = found;
         setDetectedPatient(found);
@@ -634,20 +564,28 @@ function Chat({ activePatient }) {
         .map(m => ({ role: m.role, content: m.content }));
 
       const response = await fetch("/api/chat", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1000,
-    system: config.systemPrompt,
-    messages: history,
-  }),
-});
-      const data = await res.json();
-      const reply = data.content?.map(b => b.text || "").join("") ||
-        "Disculpa, tuve un problema. Llámanos al +56 9 8765 4321.";
-      setMessages(prev => [...prev, mkMsg("assistant", reply)]);
-    } catch {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 1000,
+          system: buildSystemPrompt(detectedPatient || activePatient || null),
+          messages: history,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        console.error("API error:", data.error);
+        setMessages(prev => [...prev, mkMsg("assistant",
+          "Disculpa, tuve un problema técnico. Llámanos al +56 9 8765 4321.")]);
+      } else {
+        const reply = data.content?.map(b => b.text || "").join("") ||
+          "Disculpa, no pude procesar tu consulta. Llámanos al +56 9 8765 4321.";
+        setMessages(prev => [...prev, mkMsg("assistant", reply)]);
+      }
+    } catch (err) {
+      console.error("Chat fetch error:", err);
       setMessages(prev => [...prev, mkMsg("assistant",
         "Tuve un problema de conexión. Puedes llamarnos al +56 9 8765 4321 o venir a Av. Italia 1456.")]);
     } finally {
@@ -741,6 +679,17 @@ function Chat({ activePatient }) {
 export default function AukenOptica() {
   const [activePatient, setActivePatient] = useState(null);
   const [view, setView] = useState("split"); // split | chat | fichas
+  const [allPatients, setAllPatients] = useState([]);
+
+  // Cargar pacientes de Supabase una vez al montar
+  useEffect(() => {
+    supabase.from("pacientes").select("*").order("nombre")
+      .then(({ data, error }) => {
+        if (!error && data) setAllPatients(data.map(dbToPatient));
+      });
+  }, []);
+
+  const alertCount = allPatients.filter(p => p.alertas.length > 0).length;
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
@@ -783,7 +732,7 @@ export default function AukenOptica() {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ background: C.redLight, border: `1px solid ${C.red}40`, borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ fontSize: 10, color: C.red, fontFamily: "'IBM Plex Mono', monospace" }}>
-              ⚠ {PATIENTS_DB.filter(p => p.alertas.length > 0).length} alertas pendientes
+              ⚠ {alertCount} alertas pendientes
             </span>
           </div>
           <div style={{ width: 28, height: 28, background: C.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -804,7 +753,7 @@ export default function AukenOptica() {
         {/* Chat */}
         {(view === "split" || view === "chat") && (
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <Chat activePatient={activePatient} key={activePatient?.id || "no-patient"} />
+            <Chat activePatient={activePatient} allPatients={allPatients} key={activePatient?.id || "no-patient"} />
           </div>
         )}
       </div>
