@@ -998,20 +998,35 @@ export default function AukenOpticaDashboard() {
               {/* DIGITAL RECEIPT SECTION */}
               {editingPatient.estado_compra === "Compró" && (
                 <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, marginTop: 10 }}>
-                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                   <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Configuración de Comprobante Digital 🎫</div>
+                   
+                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Comprobante Digital 🎫</div>
-                        <div style={{ fontSize: 11, color: C.textDim }}>Genera el ticket de retiro para WhatsApp.</div>
+                        <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Fecha de Retiro</label>
+                        <input type="date" value={editingPatient.fecha_retiro || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} onChange={e => setEditingPatient({...editingPatient, fecha_retiro: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 8, borderRadius: 6, fontSize: 12 }} />
                       </div>
+                      <div>
+                        <label style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 4 }}>Lugar de Entrega</label>
+                        <input value={editingPatient.sucursal_entrega || o.city} onChange={e => setEditingPatient({...editingPatient, sucursal_entrega: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 8, borderRadius: 6, fontSize: 12 }} />
+                      </div>
+                   </div>
+
+                   <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => {
-                        const msg = `¡Hola ${editingPatient.nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido procesada.\n\n📅 Fecha de Retiro: 15/05/2026\n👓 Monto: $${editingPatient.monto_venta}\n📍 Sucursal: ${o.city}\n\nPresenta este mensaje al retirar tus lentes. ¡Nos vemos!`;
+                        const msg = `¡Hola ${editingPatient.nombre}! ✨ Bienvenido a Óptica Glow Vision. Es un placer saludarte.\n\nEstamos procesando tu orden. Te avisaremos apenas tus lentes estén listos para retiro. 👓`;
                         window.open(`https://wa.me/${editingPatient.telefono.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
-                      }} style={{ background: "#25D366", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                      }} style={{ flex: 1, background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}40`, padding: "10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        👋 Saludo Bienvenida
+                      </button>
+                      
+                      <button onClick={() => {
+                        const f = editingPatient.fecha_retiro || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+                        const s = editingPatient.sucursal_entrega || o.city;
+                        const msg = `¡Hola ${editingPatient.nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido confirmada.\n\n📅 Fecha estimada de retiro: ${f.split('-').reverse().join('/')}\n👓 Monto pagado: $${editingPatient.monto_venta || '0'}\n📍 Lugar: ${s}\n\nPresenta este mensaje al retirar. ¡Nos vemos!`;
+                        window.open(`https://wa.me/${editingPatient.telefono.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+                      }} style={{ flex: 2, background: "#25D366", color: "#fff", border: "none", padding: "10px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                         <span>📱</span> Enviar Ticket WhatsApp
                       </button>
-                   </div>
-                   <div style={{ background: C.bg, border: `1px dashed ${C.border}`, borderRadius: 8, padding: 12, fontSize: 11, color: C.textDim }}>
-                      Tip: El paciente recibirá un comprobante digital con la fecha de retiro y los detalles de su compra para que no dependa del papel.
                    </div>
                 </div>
               )}
