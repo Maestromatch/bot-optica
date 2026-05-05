@@ -512,8 +512,8 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Paso 1: Seleccionar Audiencia</label>
                   <select style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "10px 14px", borderRadius: 8, outline: "none" }}>
-                    <option>Pacientes que NO compraron ({o.pacientesList.filter(p => p.estado_compra === "No Compró").length})</option>
-                    <option>Solo Recetas Vencidas ({o.recetasVencidas})</option>
+                    <option>Pacientes que NO compraron ({(o.pacientesList || []).filter(p => p.estado_compra === "No Compró").length})</option>
+                    <option>Solo Recetas Vencidas ({o.recetasVencidas || 0})</option>
                     <option>Leads de Operativos Recientes</option>
                   </select>
                 </div>
@@ -610,7 +610,7 @@ export default function AukenOpticaDashboard() {
   useEffect(() => {
     try {
       const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
-      if (pubKey) {
+      if (pubKey && typeof Vapi !== 'undefined') {
         const vapi = new Vapi(pubKey);
         vapi.on("call-start", () => setVapiCallStatus("connected"));
         vapi.on("call-end", () => setVapiCallStatus("disconnected"));
@@ -619,7 +619,7 @@ export default function AukenOpticaDashboard() {
         setVapiInstance(vapi);
       }
     } catch (err) {
-      console.log("Vapi no inicializado", err);
+      console.warn("Vapi skip:", err);
     }
   }, []);
 
