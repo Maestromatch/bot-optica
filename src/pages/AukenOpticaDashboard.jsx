@@ -176,7 +176,7 @@ function SalesChart({ pacientes }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
+function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -394,19 +394,26 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                           </td>
                           <td style={{ padding: "16px 24px" }}>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                              <select value={p.estado_compra || "Pendiente"} onClick={e => e.stopPropagation()} onChange={(ev) => {
+                              <select value={p.estado_compra || "Pendiente"} onClick={e => e.stopPropagation()} onChange={async (ev) => {
                                 const newEstado = ev.target.value;
+                                // Local update
                                 setOpticaData(prev => ({
                                   ...prev,
                                   pacientesList: prev.pacientesList.map(px => px.id === p.id ? { ...px, estado_compra: newEstado } : px)
                                 }));
+                                // Supabase update
+                                await supabase.from("pacientes").update({ estado_compra: newEstado }).eq("id", p.id);
                               }} style={{ background: p.estado_compra === "Compró" ? `${C.neonGreen}20` : p.estado_compra === "No Compró" ? `${C.neonRed}20` : C.bg, border: `1px solid ${p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.border}`, color: p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.text, padding: "4px 8px", borderRadius: 6, fontSize: 11, outline: "none", fontWeight: 600 }}>
                                 <option>Pendiente</option>
                                 <option>Compró</option>
                                 <option>No Compró</option>
                               </select>
                               {p.estado_compra === "Compró" && (
-                                <input type="number" placeholder="Monto $" value={p.monto_venta || ""} onClick={e => e.stopPropagation()} onChange={(ev) => {
+                                <input type="number" placeholder="Monto $" value={p.monto_venta || ""} onClick={e => e.stopPropagation()} onBlur={async (ev) => {
+                                  // Solo guardar al perder el foco para evitar mil llamadas por cada número
+                                  const val = ev.target.value;
+                                  await supabase.from("pacientes").update({ monto_venta: val }).eq("id", p.id);
+                                }} onChange={(ev) => {
                                   const val = ev.target.value;
                                   setOpticaData(prev => ({
                                     ...prev,
@@ -694,7 +701,15 @@ export default function AukenOpticaDashboard() {
           </div>
         ) : (
           <Fade>
-            <OpticaDetail optica={opticaData} setOpticaData={setOpticaData} showModal={showModal} setShowModal={setShowModal} />
+            <OpticaDetail 
+              optica={opticaData} 
+              setOpticaData={setOpticaData} 
+              showModal={showModal} 
+              setShowModal={setShowModal} 
+              sucursalFilter={sucursalFilter}
+              setEditingPatient={setEditingPatient}
+              setSelectedPatient={setSelectedPatient}
+            />
           </Fade>
         )}
       </div>
@@ -870,12 +885,27 @@ export default function AukenOpticaDashboard() {
               {/* Action Buttons */}
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button onClick={() => setSelectedPatient(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Cerrar</button>
-                <button onClick={() => {
-                  setOpticaData(prev => ({
-                    ...prev,
-                    pacientesList: prev.pacientesList.map(p => p.id === selectedPatient.id ? { ...p, ...editingPatient } : p)
-                  }));
-                  setSelectedPatient(null);
+                <button onClick={async () => {
+                  // Guardar cambios en Supabase
+                  const { error } = await supabase.from("pacientes").update({
+                    nombre: editingPatient.nombre,
+                    rut: editingPatient.rut,
+                    telefono: editingPatient.telefono,
+                    estado_compra: editingPatient.estado_compra,
+                    monto_venta: editingPatient.monto_venta,
+                    notas_clinicas: editingPatient.notas_clinicas,
+                    receta_data: editingPatient.recetaData, // Asumiendo que el campo es receta_data en la DB
+                  }).eq("id", selectedPatient.id);
+
+                  if (!error) {
+                    setOpticaData(prev => ({
+                      ...prev,
+                      pacientesList: prev.pacientesList.map(p => p.id === selectedPatient.id ? { ...p, ...editingPatient } : p)
+                    }));
+                    setSelectedPatient(null);
+                  } else {
+                    alert("Error al actualizar paciente: " + error.message);
+                  }
                 }} style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 12, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
                   💾 Guardar Cambios
                 </button>
