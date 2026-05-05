@@ -71,13 +71,13 @@ const PLANS = [
   },
   {
     name: "Multi-Sucursal",
-    monthly: "A Medida",
-    setup: "A Medida",
-    desc: "Para cadenas de ópticas que requieren un ecosistema centralizado.",
-    features: ["Todo lo del Plan Anual", "Múltiples sucursales en 1 Dashboard", "Roles de Vendedores (Multi-Tenant)", "Reportes Ejecutivos por Local", "API Personalizada (Integraciones)", "Soporte Presencial/Videollamada"],
+    monthly: "250.000",
+    setup: "400.000",
+    desc: "Para cadenas de ópticas. Precio base para Dashboard Maestro + $50k por sucursal extra.",
+    features: ["Todo lo del Plan Anual", "Múltiples sucursales en 1 Dashboard", "Roles de Vendedores (Multi-Tenant)", "Enrutamiento IA por Comuna", "API Personalizada (Integraciones)", "Soporte Presencial/Videollamada"],
     cta: "Cotizar a Medida",
     highlight: false,
-    period: ""
+    period: "base/mes"
   },
 ];
 

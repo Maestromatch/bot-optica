@@ -333,8 +333,9 @@ export default function AukenOpticaDashboard() {
   const [loading, setLoading] = useState(true);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [showModal, setShowModal] = useState(false);
-  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "" });
+  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null });
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [sucursalFilter, setSucursalFilter] = useState("Todas");
 
   const handleScanReceta = async (e) => {
     const file = e.target.files[0];
@@ -342,10 +343,29 @@ export default function AukenOpticaDashboard() {
 
     setOcrLoading(true);
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Str = event.target.result.split(',')[1];
-      try {
-        const res = await fetch('/api/vision', {
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX = 800;
+        
+        if (width > height) {
+          if (width > MAX) { height *= MAX / width; width = MAX; }
+        } else {
+          if (height > MAX) { width *= MAX / height; height = MAX; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const base64Full = canvas.toDataURL('image/jpeg', 0.6);
+        const base64Str = base64Full.split(',')[1];
+        
+        try {
+          const res = await fetch('/api/vision', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64Str })
@@ -354,25 +374,21 @@ export default function AukenOpticaDashboard() {
         
         if (data.success && data.data) {
           const { fecha, OD, OI, adicion, dp } = data.data;
-          let ocrText = `--- RECETA IA ---\n`;
-          if (fecha) ocrText += `Fecha: ${fecha}\n`;
-          if (OD) ocrText += `OD: Esf ${OD.esfera || '-'} | Cil ${OD.cilindro || '-'} | Eje ${OD.eje || '-'}\n`;
-          if (OI) ocrText += `OI: Esf ${OI.esfera || '-'} | Cil ${OI.cilindro || '-'} | Eje ${OI.eje || '-'}\n`;
-          if (adicion) ocrText += `ADD: ${adicion}\n`;
-          if (dp) ocrText += `DP: ${dp}\n`;
-          
           setNewLead(prev => ({
             ...prev,
-            notas: prev.notas ? prev.notas + '\n\n' + ocrText : ocrText
+            recetaData: { fecha, OD, OI, adicion, dp },
+            recetaImgUrl: base64Full
           }));
         } else {
           alert('No se pudo leer la receta.');
         }
       } catch (err) {
         alert('Error conectando con la IA de Visión.');
-      } finally {
-        setOcrLoading(false);
-      }
+        } finally {
+          setOcrLoading(false);
+        }
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
@@ -470,6 +486,12 @@ export default function AukenOpticaDashboard() {
           <span style={{ fontSize: 13, color: C.textDim, fontWeight: 500 }}>Dashboard Inteligente</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <select value={sucursalFilter} onChange={e => setSucursalFilter(e.target.value)} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.textDim, borderRadius: 8, padding: "6px 12px", fontSize: 12, outline: "none", cursor: "pointer" }}>
+            <option value="Todas">Todas las sucursales</option>
+            <option value="Central">Central</option>
+            <option value="Providencia">Providencia</option>
+            <option value="Las Condes">Las Condes</option>
+          </select>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.neonGreen, fontWeight: 500, background: `${C.neonGreen}10`, padding: "6px 12px", borderRadius: 20 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.neonGreen, boxShadow: `0 0 8px ${C.neonGreen}` }}></span>
             Sistema Activo
@@ -518,11 +540,40 @@ export default function AukenOpticaDashboard() {
             </div>
 
             <form onSubmit={handleAddLead} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <select value={newLead.sucursal} onChange={e => setNewLead({...newLead, sucursal: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }}>
+                <option value="Central">Sucursal Central</option>
+                <option value="Providencia">Sucursal Providencia</option>
+                <option value="Las Condes">Sucursal Las Condes</option>
+              </select>
               <input required placeholder="Nombre Completo" value={newLead.nombre} onChange={e => setNewLead({...newLead, nombre: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               <input placeholder="RUT (Opcional)" value={newLead.rut} onChange={e => setNewLead({...newLead, rut: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
-              <input required placeholder="Teléfono (+569...)" value={newLead.telefono} onChange={e => setNewLead({...newLead, telefono: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
-              <input required placeholder="Comuna o Ubicación" value={newLead.comuna} onChange={e => setNewLead({...newLead, comuna: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <div style={{ display: "flex", gap: 12 }}>
+                <input required placeholder="Teléfono (+569...)" value={newLead.telefono} onChange={e => setNewLead({...newLead, telefono: e.target.value})} style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                <input required placeholder="Comuna o Ubicación" value={newLead.comuna} onChange={e => setNewLead({...newLead, comuna: e.target.value})} style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              </div>
               <textarea placeholder="Notas adicionales (opcional)" value={newLead.notas} onChange={e => setNewLead({...newLead, notas: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none", resize: "none", fontFamily: "'Inter', sans-serif" }} rows={3} />
+              
+              {/* Receta Visualizer */}
+              {newLead.recetaData && (
+                <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: C.textDim, marginBottom: 8, fontWeight: 600 }}>FICHA ÓPTICA (IA)</div>
+                  <table style={{ width: "100%", fontSize: 11, color: C.text, textAlign: "center", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ color: C.neonBlue }}><th></th><th>Esf</th><th>Cil</th><th>Eje</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ fontWeight: "bold" }}>OD</td><td>{newLead.recetaData.OD?.esfera || '-'}</td><td>{newLead.recetaData.OD?.cilindro || '-'}</td><td>{newLead.recetaData.OD?.eje || '-'}</td></tr>
+                      <tr><td style={{ fontWeight: "bold" }}>OI</td><td>{newLead.recetaData.OI?.esfera || '-'}</td><td>{newLead.recetaData.OI?.cilindro || '-'}</td><td>{newLead.recetaData.OI?.eje || '-'}</td></tr>
+                    </tbody>
+                  </table>
+                  <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 11, color: C.text }}>
+                    {newLead.recetaData.adicion && <div>ADD: <b>{newLead.recetaData.adicion}</b></div>}
+                    {newLead.recetaData.dp && <div>DP: <b>{newLead.recetaData.dp}</b></div>}
+                    {newLead.recetaData.fecha && <div>Fecha: <b>{newLead.recetaData.fecha}</b></div>}
+                  </div>
+                  {newLead.recetaImgUrl && <img src={newLead.recetaImgUrl} style={{ width: "100%", height: 60, objectFit: "cover", borderRadius: 4, marginTop: 12, opacity: 0.6 }} alt="Receta Escaneada" />}
+                </div>
+              )}
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 10, borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Guardar</button>
