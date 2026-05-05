@@ -54,7 +54,7 @@ const PLANS = [
     monthly: "89.990",
     setup: "150.000",
     desc: "Ideal para comenzar a automatizar tu óptica sin grandes riesgos.",
-    features: ["Carga de pacientes (Excel)", "Hasta 1.000 pacientes activos", "Recordatorios automáticos WhatsApp", "Dashboard Premium Dark Mode", "Agendamiento Inteligente", "Soporte vía chat"],
+    features: ["Carga de pacientes (Excel)", "Hasta 1.000 pacientes", "Dashboard CRM Básico", "Recordatorios WhatsApp", "Agendamiento Inteligente", "Soporte vía chat"],
     cta: "Elegir Mensual",
     highlight: false,
     period: "/mes"
@@ -64,7 +64,7 @@ const PLANS = [
     monthly: "890.000",
     setup: "GRATIS",
     desc: "Para ópticas consolidadas. Ahorras $329.880 respecto al mensual.",
-    features: ["Instalación $0 (Ahorras $150k)", "Pacientes Ilimitados (Sube tu Excel de 50 o 5.000)", "Campañas IA Masivas Ilimitadas", "2 Meses Gratis Incluidos", "Asesoría de Ventas Mensual", "Prioridad de Soporte 24/7"],
+    features: ["CRM Financiero (Control de Ventas)", "Escáner OCR de Recetas con IA", "Gestión de Operativos en Terreno", "Pacientes y Campañas Ilimitadas", "Instalación $0 (Ahorras $150k)", "Prioridad de Soporte 24/7"],
     cta: "Elegir Anual",
     highlight: true,
     period: "/año"
@@ -74,7 +74,7 @@ const PLANS = [
     monthly: "250.000",
     setup: "400.000",
     desc: "Para cadenas de ópticas. Precio base para Dashboard Maestro + $50k por sucursal extra.",
-    features: ["Todo lo del Plan Anual", "Múltiples sucursales en 1 Dashboard", "Roles de Vendedores (Multi-Tenant)", "Enrutamiento IA por Comuna", "API Personalizada (Integraciones)", "Soporte Presencial/Videollamada"],
+    features: ["Todo lo del Plan Anual", "Múltiples sucursales en 1 Dashboard", "Roles de Vendedores (Multi-Tenant)", "Reportes por Local y Operativo", "API Personalizada (Integraciones)", "Soporte Presencial/Videollamada"],
     cta: "Cotizar a Medida",
     highlight: false,
     period: "base/mes"

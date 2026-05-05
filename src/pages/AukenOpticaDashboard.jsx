@@ -160,6 +160,42 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
             </Fade>
           </div>
 
+          {/* Financial KPIs */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            <Fade delay={180}>
+              <GlassCard style={{ borderTop: `2px solid ${C.neonGreen}` }}>
+                <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>💸 Ventas de Hoy</div>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonGreen, textShadow: `0 0 12px ${C.neonGreen}40` }}>
+                  ${(o.pacientesList || []).filter(p => p.estado_compra === "Compró" && p.fecha_ultima_visita === new Date().toISOString().split('T')[0]).reduce((sum, p) => sum + (Number(p.monto_venta) || 0), 0).toLocaleString("es-CL")}
+                </div>
+                <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>CLP acumulados hoy</div>
+              </GlassCard>
+            </Fade>
+            <Fade delay={220}>
+              <GlassCard style={{ borderTop: `2px solid ${C.neonAmber}` }}>
+                <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>🎯 Tasa de Cierre</div>
+                {(() => {
+                  const total = (o.pacientesList || []).filter(p => p.estado_compra && p.estado_compra !== "Pendiente").length;
+                  const compras = (o.pacientesList || []).filter(p => p.estado_compra === "Compró").length;
+                  const pct = total > 0 ? Math.round((compras / total) * 100) : 0;
+                  return <>
+                    <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonAmber }}>{pct}%</div>
+                    <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>{compras} de {total} atendidos compraron</div>
+                  </>;
+                })()}
+              </GlassCard>
+            </Fade>
+            <Fade delay={260}>
+              <GlassCard style={{ borderTop: `2px solid ${C.neonBlue}` }}>
+                <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>📊 Ventas Totales</div>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonBlue }}>
+                  ${(o.pacientesList || []).filter(p => p.estado_compra === "Compró").reduce((sum, p) => sum + (Number(p.monto_venta) || 0), 0).toLocaleString("es-CL")}
+                </div>
+                <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>CLP acumulados total</div>
+              </GlassCard>
+            </Fade>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {/* Chart Consultas */}
             <Fade delay={200}>
@@ -225,7 +261,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                   <tr style={{ background: `${C.surfaceL}80` }}>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Paciente / Lead</th>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Contacto</th>
-                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Origen / Notas</th>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Estado / Venta</th>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Acciones</th>
                   </tr>
                 </thead>
@@ -249,9 +285,28 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                           <div style={{ fontSize: 13, color: C.text }}>{p.telefono}</div>
                           <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Ingreso: {p.fecha_ultima_visita || "Reciente"}</div>
                         </td>
-                        <td style={{ padding: "16px 24px", maxWidth: 250 }}>
-                          <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                            {p.notas_clinicas || "Sin notas"}
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <select value={p.estado_compra || "Pendiente"} onChange={(ev) => {
+                              const newEstado = ev.target.value;
+                              setOpticaData(prev => ({
+                                ...prev,
+                                pacientesList: prev.pacientesList.map((px, ix) => ix === i ? { ...px, estado_compra: newEstado } : px)
+                              }));
+                            }} style={{ background: p.estado_compra === "Compró" ? `${C.neonGreen}20` : p.estado_compra === "No Compró" ? `${C.neonRed}20` : C.bg, border: `1px solid ${p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.border}`, color: p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.text, padding: "4px 8px", borderRadius: 6, fontSize: 11, outline: "none", fontWeight: 600 }}>
+                              <option>Pendiente</option>
+                              <option>Compró</option>
+                              <option>No Compró</option>
+                            </select>
+                            {p.estado_compra === "Compró" && (
+                              <input type="number" placeholder="Monto $" value={p.monto_venta || ""} onChange={(ev) => {
+                                const val = ev.target.value;
+                                setOpticaData(prev => ({
+                                  ...prev,
+                                  pacientesList: prev.pacientesList.map((px, ix) => ix === i ? { ...px, monto_venta: val } : px)
+                                }));
+                              }} style={{ background: C.bg, border: `1px solid ${C.neonGreen}40`, color: C.neonGreen, padding: "4px 8px", borderRadius: 6, fontSize: 12, outline: "none", width: 100, fontWeight: 700 }} />
+                            )}
                           </div>
                         </td>
                         <td style={{ padding: "16px 24px" }}>
@@ -333,7 +388,7 @@ export default function AukenOpticaDashboard() {
   const [loading, setLoading] = useState(true);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [showModal, setShowModal] = useState(false);
-  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null });
+  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [sucursalFilter, setSucursalFilter] = useState("Todas");
 
@@ -399,19 +454,25 @@ export default function AukenOpticaDashboard() {
       nombre: newLead.nombre,
       rut: newLead.rut,
       telefono: newLead.telefono,
-      notas_clinicas: `Ingresado manualmente. Comuna: ${newLead.comuna}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
+      notas_clinicas: `${newLead.sucursal ? `Sucursal: ${newLead.sucursal}` : ""}${newLead.comuna ? ` | Comuna: ${newLead.comuna}` : ""}${newLead.operativo ? ` | Operativo: ${newLead.operativo}` : ""}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
       fecha_ultima_visita: new Date().toISOString().split('T')[0]
     };
     
     const { data, error } = await supabase.from("pacientes").insert([lead]).select();
     if (!error && data) {
+      const savedLead = {
+        ...data[0],
+        estado_compra: newLead.estado_compra,
+        monto_venta: newLead.estado_compra === "Compró" ? newLead.monto_venta : "",
+        operativo: newLead.operativo
+      };
       setOpticaData(prev => ({
         ...prev,
-        pacientesList: [data[0], ...prev.pacientesList],
+        pacientesList: [savedLead, ...prev.pacientesList],
         patients: prev.patients + 1
       }));
       setShowModal(false);
-      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "", notas: "" });
+      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
     } else {
       alert("Error al guardar el prospecto");
     }
@@ -553,6 +614,18 @@ export default function AukenOpticaDashboard() {
               </div>
               <textarea placeholder="Notas adicionales (opcional)" value={newLead.notas} onChange={e => setNewLead({...newLead, notas: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none", resize: "none", fontFamily: "'Inter', sans-serif" }} rows={3} />
               
+              <input placeholder="Nombre del Operativo (ej. Operativo Macul)" value={newLead.operativo} onChange={e => setNewLead({...newLead, operativo: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              
+              <div style={{ display: "flex", gap: 12 }}>
+                <select value={newLead.estado_compra} onChange={e => setNewLead({...newLead, estado_compra: e.target.value})} style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }}>
+                  <option value="Pendiente">⏳ Pendiente</option>
+                  <option value="Compró">✅ Compró</option>
+                  <option value="No Compró">❌ No Compró</option>
+                </select>
+                {newLead.estado_compra === "Compró" && (
+                  <input type="number" placeholder="Monto Venta $" value={newLead.monto_venta} onChange={e => setNewLead({...newLead, monto_venta: e.target.value})} style={{ flex: 1, background: C.bg, border: `1px solid ${C.neonGreen}50`, color: C.neonGreen, padding: 12, borderRadius: 8, outline: "none", fontWeight: 700 }} />
+                )}
+              </div>
               {/* Receta Visualizer */}
               {newLead.recetaData && (
                 <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12 }}>
