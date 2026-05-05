@@ -550,7 +550,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
           <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonRed}`, background: `linear-gradient(180deg, ${C.surface} 0%, ${C.bg} 100%)` }}>
             <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Asistente de Voz Aukén (Fase Beta) 🎙️</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Asistente Telefónico IA (Fase Beta) 🎙️</div>
                 <div style={{ fontSize: 14, color: C.textDim }}>IA conversacional con voz humana para agendar pacientes y hacer seguimiento telefónico.</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: `${vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed}15`, padding: "8px 16px", borderRadius: 8, border: `1px solid ${vapiCallStatus === 'connected' || vapiCallStatus === 'speaking' ? C.neonGreen : vapiCallStatus === 'connecting' ? C.neonAmber : C.neonRed}40` }}>
@@ -1075,7 +1075,6 @@ export default function AukenOpticaDashboard() {
                     setSelectedPatient(null);
                   } else {
                     alert("Error al actualizar paciente: " + error.message);
-                  }
                   }
                 }} style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 12, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
                   💾 Guardar Cambios
