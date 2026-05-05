@@ -612,76 +612,57 @@ export default function AukenOpticaDashboard() {
     reader.readAsDataURL(file);
   };
 
+  // Helper para recalcular KPIs
+  const refreshStats = (list) => {
+    const now = new Date();
+    const vencidas = list.filter(p => p.recetaData?.fecha && (now - new Date(p.recetaData.fecha)) > 365 * 24 * 60 * 60 * 1000).length;
+    const proximas = list.filter(p => p.recetaData?.fecha && (now - new Date(p.recetaData.fecha)) > 330 * 24 * 60 * 60 * 1000 && (now - new Date(p.recetaData.fecha)) <= 365 * 24 * 60 * 60 * 1000).length;
+    const vigentes = list.filter(p => !p.recetaData?.fecha || (now - new Date(p.recetaData.fecha)) <= 365 * 24 * 60 * 60 * 1000).length;
+    
+    setOpticaData(prev => ({
+      ...prev,
+      patients: list.length,
+      recetasVencidas: vencidas,
+      proximasControl: proximas,
+      vigentes: vigentes,
+      pacientesList: list
+    }));
+  };
+
   const handleAddLead = async (e) => {
     e.preventDefault();
       const lead = {
         nombre: newLead.nombre,
         rut: newLead.rut,
         telefono: newLead.telefono,
-        notas_clinicas: `${newLead.sucursal ? `Sucursal: ${newLead.sucursal}` : ""}${newLead.comuna ? ` | Comuna: ${newLead.comuna}` : ""}${newLead.operativo ? ` | Operativo: ${newLead.operativo}` : ""}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
+        estado_compra: newLead.estado_compra,
+        monto_venta: newLead.monto_venta,
+        operativo: newLead.operativo,
+        sucursal: newLead.sucursal,
+        comuna: newLead.comuna,
+        notas_clinicas: newLead.notas,
         fecha_ultima_visita: new Date().toISOString().split('T')[0],
         receta_data: newLead.recetaData,
         receta_img_url: newLead.recetaImgUrl
       };
       
-      const { data, error } = await supabase.from("pacientes").insert([lead]).select();
-      if (!error && data) {
-        const savedLead = {
-          ...data[0],
-          recetaData: data[0].receta_data,
-          recetaImgUrl: data[0].receta_img_url
-        };
-      setOpticaData(prev => ({
-        ...prev,
-        pacientesList: [savedLead, ...prev.pacientesList],
-        patients: prev.patients + 1
-      }));
-      setShowModal(false);
-      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
-    } else {
-      alert("Error al guardar el prospecto");
-    }
+      const { error } = await supabase.from("pacientes").insert([lead]);
+      if (!error) {
+        setShowModal(false);
+        setNewLead({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
+        // No actualizamos estado local, Realtime lo hará
+      } else {
+        alert("Error al guardar: " + error.message);
+      }
   };
 
+  // Fetch inicial y Suscripción Realtime
   useEffect(() => {
-    async function fetchData() {
-      const { data, error } = await supabase.from("pacientes").select("*");
-      if (error) {
-        console.error("Error cargando pacientes para dashboard:", error);
-        setLoading(false);
-        return;
-      }
-
-      let vencidas = 0;
-      let proximas = 0;
-      let vigentes = 0;
-      const hoy = new Date();
-
-      data.forEach(p => {
-        if (!p.fecha_proximo_control) return;
-        const control = new Date(p.fecha_proximo_control);
-        const dias = Math.round((control - hoy) / (1000 * 60 * 60 * 24));
-        if (dias < 0) vencidas++;
-        else if (dias <= 30) proximas++;
-        else vigentes++;
-      });
-
-      setOpticaData(prev => ({
-        ...prev,
-        patients: data.length,
-        recetasVencidas: vencidas,
-        proximasControl: proximas,
-        vigentes: vigentes,
-        consultasMes: 15,
-        citasAgendadas: 2,
-        recordatoriosEnviados: 5,
-        recuperados: 1,
-        weeklyConsultas: [1, 2, 0, 1, 3, 2, 1, 4, 2, 3, 1, 5],
-        weeklyRecuperados: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-        alertas: vencidas > 0 ? [`${vencidas} recetas vencidas pendientes de contactar`] : [],
-        pacientesList: data.map(p => ({
+    const fetchData = async () => {
+      const { data, error } = await supabase.from("pacientes").select("*").order('created_at', { ascending: false });
+      if (!error && data) {
+        const normalized = data.map(p => ({
           ...p,
-          recetaData: p.receta_data || p.recetaData || null,
           recetaImgUrl: p.receta_img_url || p.recetaImgUrl || null
         })).sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0)),
       }));
