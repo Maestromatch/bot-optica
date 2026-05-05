@@ -614,22 +614,23 @@ export default function AukenOpticaDashboard() {
 
   const handleAddLead = async (e) => {
     e.preventDefault();
-    const lead = {
-      nombre: newLead.nombre,
-      rut: newLead.rut,
-      telefono: newLead.telefono,
-      notas_clinicas: `${newLead.sucursal ? `Sucursal: ${newLead.sucursal}` : ""}${newLead.comuna ? ` | Comuna: ${newLead.comuna}` : ""}${newLead.operativo ? ` | Operativo: ${newLead.operativo}` : ""}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
-      fecha_ultima_visita: new Date().toISOString().split('T')[0]
-    };
-    
-    const { data, error } = await supabase.from("pacientes").insert([lead]).select();
-    if (!error && data) {
-      const savedLead = {
-        ...data[0],
-        estado_compra: newLead.estado_compra,
-        monto_venta: newLead.estado_compra === "Compró" ? newLead.monto_venta : "",
-        operativo: newLead.operativo
+      const lead = {
+        nombre: newLead.nombre,
+        rut: newLead.rut,
+        telefono: newLead.telefono,
+        notas_clinicas: `${newLead.sucursal ? `Sucursal: ${newLead.sucursal}` : ""}${newLead.comuna ? ` | Comuna: ${newLead.comuna}` : ""}${newLead.operativo ? ` | Operativo: ${newLead.operativo}` : ""}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
+        fecha_ultima_visita: new Date().toISOString().split('T')[0],
+        receta_data: newLead.recetaData,
+        receta_img_url: newLead.recetaImgUrl
       };
+      
+      const { data, error } = await supabase.from("pacientes").insert([lead]).select();
+      if (!error && data) {
+        const savedLead = {
+          ...data[0],
+          recetaData: data[0].receta_data,
+          recetaImgUrl: data[0].receta_img_url
+        };
       setOpticaData(prev => ({
         ...prev,
         pacientesList: [savedLead, ...prev.pacientesList],
@@ -802,27 +803,34 @@ export default function AukenOpticaDashboard() {
                   <input type="number" placeholder="Monto Venta $" value={newLead.monto_venta} onChange={e => setNewLead({...newLead, monto_venta: e.target.value})} style={{ flex: 1, background: C.bg, border: `1px solid ${C.neonGreen}50`, color: C.neonGreen, padding: 12, borderRadius: 8, outline: "none", fontWeight: 700 }} />
                 )}
               </div>
-              {/* Receta Visualizer */}
-              {newLead.recetaData && (
-                <div style={{ background: `${C.border}30`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 11, color: C.textDim, marginBottom: 8, fontWeight: 600 }}>FICHA ÓPTICA (IA)</div>
-                  <table style={{ width: "100%", fontSize: 11, color: C.text, textAlign: "center", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ color: C.neonBlue }}><th></th><th>Esf</th><th>Cil</th><th>Eje</th></tr>
-                    </thead>
-                    <tbody>
-                      <tr><td style={{ fontWeight: "bold" }}>OD</td><td>{newLead.recetaData.OD?.esfera || '-'}</td><td>{newLead.recetaData.OD?.cilindro || '-'}</td><td>{newLead.recetaData.OD?.eje || '-'}</td></tr>
-                      <tr><td style={{ fontWeight: "bold" }}>OI</td><td>{newLead.recetaData.OI?.esfera || '-'}</td><td>{newLead.recetaData.OI?.cilindro || '-'}</td><td>{newLead.recetaData.OI?.eje || '-'}</td></tr>
-                    </tbody>
-                  </table>
-                  <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 11, color: C.text }}>
-                    {newLead.recetaData.adicion && <div>ADD: <b>{newLead.recetaData.adicion}</b></div>}
-                    {newLead.recetaData.dp && <div>DP: <b>{newLead.recetaData.dp}</b></div>}
-                    {newLead.recetaData.fecha && <div>Fecha: <b>{newLead.recetaData.fecha}</b></div>}
-                  </div>
-                  {newLead.recetaImgUrl && <img src={newLead.recetaImgUrl} style={{ width: "100%", height: 60, objectFit: "cover", borderRadius: 4, marginTop: 12, opacity: 0.6 }} alt="Receta Escaneada" />}
+              {/* Manual Prescription for New Lead */}
+              <div style={{ background: `${C.border}40`, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: C.neonBlue, textTransform: "uppercase", fontWeight: 700 }}>📋 Ficha Óptica (Editable)</div>
+                  {!newLead.recetaData && (
+                    <button type="button" onClick={() => setNewLead({...newLead, recetaData: { OD: { esfera: "", cilindro: "", eje: "" }, OI: { esfera: "", cilindro: "", eje: "" }, adicion: "", dp: "" }})} style={{ background: `${C.neonBlue}20`, border: `1px solid ${C.neonBlue}40`, color: C.neonBlue, fontSize: 10, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>+ Agregar Datos</button>
+                  )}
                 </div>
-              )}
+                {newLead.recetaData ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr", gap: 8, fontSize: 11 }}>
+                    <div style={{ color: C.textMuted }}></div><div style={{ textAlign: "center", color: C.textMuted }}>Esf</div><div style={{ textAlign: "center", color: C.textMuted }}>Cil</div><div style={{ textAlign: "center", color: C.textMuted }}>Eje</div>
+                    
+                    <div style={{ color: C.neonBlue, fontWeight: 700 }}>OD</div>
+                    <input value={newLead.recetaData.OD?.esfera || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OD: {...newLead.recetaData.OD, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={newLead.recetaData.OD?.cilindro || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OD: {...newLead.recetaData.OD, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={newLead.recetaData.OD?.eje || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OD: {...newLead.recetaData.OD, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    
+                    <div style={{ color: C.neonBlue, fontWeight: 700 }}>OI</div>
+                    <input value={newLead.recetaData.OI?.esfera || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OI: {...newLead.recetaData.OI, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={newLead.recetaData.OI?.cilindro || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OI: {...newLead.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={newLead.recetaData.OI?.eje || ""} onChange={e => setNewLead({...newLead, recetaData: {...newLead.recetaData, OI: {...newLead.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 4, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "10px", color: C.textMuted, fontSize: 11, border: `1px dashed ${C.border}`, borderRadius: 6 }}>
+                    Usa el escáner o agrégalos manualmente.
+                  </div>
+                )}
+              </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 10, borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Guardar</button>
@@ -981,10 +989,32 @@ export default function AukenOpticaDashboard() {
                   } else {
                     alert("Error al actualizar paciente: " + error.message);
                   }
+                  }
                 }} style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 12, borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
                   💾 Guardar Cambios
                 </button>
               </div>
+
+              {/* DIGITAL RECEIPT SECTION */}
+              {editingPatient.estado_compra === "Compró" && (
+                <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, marginTop: 10 }}>
+                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Comprobante Digital 🎫</div>
+                        <div style={{ fontSize: 11, color: C.textDim }}>Genera el ticket de retiro para WhatsApp.</div>
+                      </div>
+                      <button onClick={() => {
+                        const msg = `¡Hola ${editingPatient.nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido procesada.\n\n📅 Fecha de Retiro: 15/05/2026\n👓 Monto: $${editingPatient.monto_venta}\n📍 Sucursal: ${o.city}\n\nPresenta este mensaje al retirar tus lentes. ¡Nos vemos!`;
+                        window.open(`https://wa.me/${editingPatient.telefono.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+                      }} style={{ background: "#25D366", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>📱</span> Enviar Ticket WhatsApp
+                      </button>
+                   </div>
+                   <div style={{ background: C.bg, border: `1px dashed ${C.border}`, borderRadius: 8, padding: 12, fontSize: 11, color: C.textDim }}>
+                      Tip: El paciente recibirá un comprobante digital con la fecha de retiro y los detalles de su compra para que no dependa del papel.
+                   </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
