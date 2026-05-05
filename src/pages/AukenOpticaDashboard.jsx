@@ -334,6 +334,48 @@ export default function AukenOpticaDashboard() {
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [showModal, setShowModal] = useState(false);
   const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "" });
+  const [ocrLoading, setOcrLoading] = useState(false);
+
+  const handleScanReceta = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setOcrLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Str = event.target.result.split(',')[1];
+      try {
+        const res = await fetch('/api/vision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64Str })
+        });
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          const { fecha, OD, OI, adicion, dp } = data.data;
+          let ocrText = `--- RECETA IA ---\n`;
+          if (fecha) ocrText += `Fecha: ${fecha}\n`;
+          if (OD) ocrText += `OD: Esf ${OD.esfera || '-'} | Cil ${OD.cilindro || '-'} | Eje ${OD.eje || '-'}\n`;
+          if (OI) ocrText += `OI: Esf ${OI.esfera || '-'} | Cil ${OI.cilindro || '-'} | Eje ${OI.eje || '-'}\n`;
+          if (adicion) ocrText += `ADD: ${adicion}\n`;
+          if (dp) ocrText += `DP: ${dp}\n`;
+          
+          setNewLead(prev => ({
+            ...prev,
+            notas: prev.notas ? prev.notas + '\n\n' + ocrText : ocrText
+          }));
+        } else {
+          alert('No se pudo leer la receta.');
+        }
+      } catch (err) {
+        alert('Error conectando con la IA de Visión.');
+      } finally {
+        setOcrLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleAddLead = async (e) => {
     e.preventDefault();
@@ -463,6 +505,18 @@ export default function AukenOpticaDashboard() {
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
           <GlassCard style={{ width: 400, background: C.surface }}>
             <h3 style={{ fontSize: 18, marginBottom: 20 }}>Ingresar Prospecto Manual</h3>
+            
+            {/* OCR Button */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${C.neonGreen}20`, border: `1px dashed ${C.neonGreen}60`, color: C.neonGreen, padding: 12, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background = `${C.neonGreen}30`}
+                onMouseLeave={e => e.currentTarget.style.background = `${C.neonGreen}20`}
+              >
+                {ocrLoading ? "Escaneando receta..." : "📸 Escanear Receta con IA"}
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleScanReceta} disabled={ocrLoading} />
+              </label>
+            </div>
+
             <form onSubmit={handleAddLead} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <input required placeholder="Nombre Completo" value={newLead.nombre} onChange={e => setNewLead({...newLead, nombre: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               <input placeholder="RUT (Opcional)" value={newLead.rut} onChange={e => setNewLead({...newLead, rut: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />

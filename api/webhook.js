@@ -83,9 +83,25 @@ export default async function handler(req, res) {
 
     const messageObj = body.entry[0].changes[0].value.messages[0];
     const userPhone = messageObj.from; // Número de teléfono del cliente
-    const textMessage = messageObj.text?.body;
+    const msgType = messageObj.type;
+    let textMessage = "";
 
-    if (!textMessage) return res.status(200).send("Not a text message");
+    if (msgType === "image") {
+      const mediaId = messageObj.image.id;
+      // PASOS FUTUROS PARA LECTURA DE RECETAS EN WHATSAPP:
+      // 1. Obtener la URL de la imagen usando la API Graph de Meta: GET /v21.0/${mediaId}
+      // 2. Descargar la imagen y convertirla a Base64.
+      // 3. Pasarla por Groq Vision IA (Llama 3.2 Vision).
+      // 4. Extraer Fecha, Esfera, Cilindro, etc.
+      // 5. Guardar en la Ficha Clínica del paciente y agendar seguimiento a 12 meses.
+      textMessage = "[SISTEMA: El paciente ha enviado una imagen. En futuras versiones la Visión IA la procesará automáticamente.]";
+    } else if (msgType === "text") {
+      textMessage = messageObj.text?.body;
+    } else {
+      return res.status(200).send("Not a supported message type");
+    }
+
+    if (!textMessage) return res.status(200).send("Empty message");
 
     // 3. Buscar paciente en Supabase
     const { data: paciente } = await supabase

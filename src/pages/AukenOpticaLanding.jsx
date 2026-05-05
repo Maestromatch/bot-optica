@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 
 const C = {
-  cream:     "#F5F0E8",
-  creamDeep: "#EDE7D9",
-  ink:       "#141010",
-  inkMid:    "#3A3530",
-  inkFaint:  "#7A7570",
-  cobalt:    "#1B3A6B",
-  cobaltLight:"#2B5BA8",
-  cobaltGhost:"#EBF0F8",
-  gold:      "#8B6914",
-  goldLight: "#F5E6C0",
-  white:     "#FEFCF8",
-  border:    "#D5CFC4",
+  cream:     "#090A0F",
+  creamDeep: "#05060A",
+  ink:       "#F8FAFC",
+  inkMid:    "#94A3B8",
+  inkFaint:  "#475569",
+  cobalt:    "#FB923C", // Naranja principal
+  cobaltLight:"#F97316",
+  cobaltGhost:"#FB923C15",
+  gold:      "#10B981", // Verde neón
+  goldLight: "#047857",
+  white:     "#11131C", // Surface card
+  border:    "#23283A",
 };
 
 const PROBLEMS = [
@@ -166,6 +166,17 @@ function ContactForm() {
 export default function AukenOpticaLanding() {
   const [activeFeature, setActiveFeature] = useState(0);
 
+  useEffect(() => {
+    document.title = "Aukén Opti-Manager | Inteligencia Artificial para Ópticas";
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = "description";
+      document.head.appendChild(meta);
+    }
+    meta.content = "Automatiza tu óptica con IA. Lee recetas, agenda pacientes y recupera recetas vencidas por WhatsApp 24/7. Sistema integral de CRM para ópticas.";
+  }, []);
+
   return (
     <div style={{ background: C.cream, minHeight: "100vh", color: C.ink, overflowX: "hidden" }}>
       <style>{`
@@ -176,8 +187,21 @@ export default function AukenOpticaLanding() {
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
         @keyframes rotateSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         .nav-link:hover { color: ${C.cobalt} !important; }
-        .plan-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(27,58,107,.12) !important; }
+        .plan-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(251,146,60,.12) !important; }
         .feature-tab:hover { background: ${C.creamDeep} !important; }
+        
+        .grid-responsive { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .grid-features { display: grid; grid-template-columns: 280px 1fr; gap: 0; border: 1px solid ${C.border}; border-radius: 8px; overflow: hidden; background: ${C.white}; }
+        
+        @media (max-width: 900px) {
+          .grid-responsive { grid-template-columns: 1fr; gap: 40px; }
+          .grid-3 { grid-template-columns: 1fr; }
+          .grid-features { grid-template-columns: 1fr; }
+          .hide-mobile { display: none !important; }
+          .mobile-center { text-align: center; }
+          .mobile-padding { padding: 40px 20px !important; }
+        }
       `}</style>
 
       {/* NAV */}
@@ -188,7 +212,7 @@ export default function AukenOpticaLanding() {
           <span style={{ color: C.border, margin: "0 6px" }}>·</span>
           <span style={{ fontSize: 11, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>ópticas</span>
         </div>
-        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+        <div className="hide-mobile" style={{ display: "flex", gap: 28, alignItems: "center" }}>
           {["El problema", "Funciones", "Precios"].map(l => (
             <a key={l} href={`#${l.toLowerCase().replace(" ", "-")}`} className="nav-link"
               style={{ color: C.inkMid, fontSize: 12, textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace", transition: "color .2s" }}>
@@ -202,7 +226,8 @@ export default function AukenOpticaLanding() {
       </nav>
 
       {/* HERO */}
-      <section style={{ paddingTop: 120, paddingBottom: 80, maxWidth: 1160, margin: "0 auto", padding: "120px 40px 80px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
+      <section className="mobile-padding" style={{ paddingTop: 120, paddingBottom: 80, maxWidth: 1160, margin: "0 auto", padding: "120px 40px 80px" }}>
+        <div className="grid-responsive">
         <div>
           <div style={{ animation: "fadeUp .8s ease both", animationDelay: "0ms" }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: C.cobaltGhost, border: `1px solid ${C.cobalt}30`, borderRadius: 3, padding: "5px 12px", marginBottom: 24 }}>
@@ -276,10 +301,11 @@ export default function AukenOpticaLanding() {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
       {/* EL PROBLEMA */}
-      <section id="el-problema" style={{ background: C.ink, padding: "80px 40px" }}>
+      <section id="el-problema" className="mobile-padding" style={{ background: C.ink, padding: "80px 40px" }}>
         <div style={{ maxWidth: 1160, margin: "0 auto" }}>
           <Reveal>
             <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 48 }}>
@@ -289,7 +315,7 @@ export default function AukenOpticaLanding() {
               </h2>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+          <div className="grid-3">
             {PROBLEMS.map((p, i) => (
               <Reveal key={p.title} delay={i * 100}>
                 <div style={{ border: "1px solid #2A2620", borderRadius: 8, padding: 28, borderLeft: `3px solid ${C.cobaltLight}`, background: "#1A1612" }}>
@@ -308,7 +334,7 @@ export default function AukenOpticaLanding() {
       </section>
 
       {/* FUNCIONES */}
-      <section id="funciones" style={{ padding: "80px 40px", background: C.cream }}>
+      <section id="funciones" className="mobile-padding" style={{ padding: "80px 40px", background: C.cream }}>
         <div style={{ maxWidth: 1160, margin: "0 auto" }}>
           <Reveal>
             <div style={{ marginBottom: 48 }}>
@@ -322,7 +348,7 @@ export default function AukenOpticaLanding() {
               </h2>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 0, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden", background: C.white }}>
+          <div className="grid-features">
             {/* Tabs */}
             <div style={{ borderRight: `1px solid ${C.border}` }}>
               {FEATURES.map((f, i) => (
@@ -354,7 +380,7 @@ export default function AukenOpticaLanding() {
       </section>
 
       {/* PRECIOS */}
-      <section id="precios" style={{ padding: "80px 40px", background: C.creamDeep }}>
+      <section id="precios" className="mobile-padding" style={{ padding: "80px 40px", background: C.creamDeep }}>
         <div style={{ maxWidth: 1160, margin: "0 auto" }}>
           <Reveal>
             <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -367,7 +393,7 @@ export default function AukenOpticaLanding() {
               </p>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div className="grid-3">
             {PLANS.map((plan, i) => (
               <Reveal key={plan.name} delay={i * 100}>
                 <div className="plan-card" style={{ background: plan.highlight ? C.cobalt : C.white, border: `1px solid ${plan.highlight ? C.cobalt : C.border}`, borderRadius: 8, padding: 28, position: "relative", transition: "all .25s", boxShadow: plan.highlight ? "0 8px 32px rgba(27,58,107,.2)" : "none", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -406,8 +432,8 @@ export default function AukenOpticaLanding() {
       </section>
 
       {/* CONTACTO */}
-      <section id="contacto" style={{ padding: "80px 40px", background: C.cream }}>
-        <div style={{ maxWidth: 1160, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+      <section id="contacto" className="mobile-padding" style={{ padding: "80px 40px", background: C.cream }}>
+        <div className="grid-responsive" style={{ maxWidth: 1160, margin: "0 auto", alignItems: "start" }}>
           <Reveal>
             <div>
               <div style={{ fontSize: 10, color: C.cobalt, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>activar sistema</div>
