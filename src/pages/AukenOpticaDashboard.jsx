@@ -359,88 +359,91 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
                   <tr style={{ background: `${C.surfaceL}80` }}>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Paciente / Lead</th>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Contacto</th>
-                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Estado / Venta</th>
+                    <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Estado</th>
                     <th style={{ padding: "16px 24px", fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: "uppercase" }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(() => {
-                    const filtered = sucursalFilter === "Todas" 
-                      ? (o.pacientesList || []) 
-                      : (o.pacientesList || []).filter(p => {
-                        const notas = (p.notas_clinicas || "").toLowerCase();
-                        const sf = sucursalFilter.toLowerCase();
-                        return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
-                      });
-                    return filtered.length > 0 ? filtered.map((p, i) => {
-                    // Determinar si es un lead de operativo
-                    const isOperativo = p.notas_clinicas?.toLowerCase().includes("operativo") || p.producto_actual?.toLowerCase().includes("operativo");
-                    
-                    return (
-                      <tr key={p.id || i} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s", cursor: "pointer" }} 
-                        onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} 
-                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                        onClick={() => { setEditingPatient({...p}); setSelectedPatient(p); }}
-                      >
-                        <td style={{ padding: "16px 24px" }}>
-                          <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{p.nombre}</div>
-                          <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>RUT: {p.rut}</div>
-                          {isOperativo && (
-                            <div style={{ display: "inline-block", marginTop: 8, fontSize: 10, background: `${C.neonBlue}20`, color: C.neonBlue, padding: "2px 8px", borderRadius: 12, fontWeight: 600, border: `1px solid ${C.neonBlue}40` }}>
-                              LEAD OPERATIVO
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: "16px 24px" }}>
-                          <div style={{ fontSize: 13, color: C.text }}>{p.telefono}</div>
-                          <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Ingreso: {p.fecha_ultima_visita || "Reciente"}</div>
-                        </td>
-                        <td style={{ padding: "16px 24px" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <select value={p.estado_compra || "Pendiente"} onChange={(ev) => {
-                              const newEstado = ev.target.value;
-                              setOpticaData(prev => ({
-                                ...prev,
-                                pacientesList: prev.pacientesList.map((px, ix) => ix === i ? { ...px, estado_compra: newEstado } : px)
-                              }));
-                            }} style={{ background: p.estado_compra === "Compró" ? `${C.neonGreen}20` : p.estado_compra === "No Compró" ? `${C.neonRed}20` : C.bg, border: `1px solid ${p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.border}`, color: p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.text, padding: "4px 8px", borderRadius: 6, fontSize: 11, outline: "none", fontWeight: 600 }}>
-                              <option>Pendiente</option>
-                              <option>Compró</option>
-                              <option>No Compró</option>
-                            </select>
-                            {p.estado_compra === "Compró" && (
-                              <input type="number" placeholder="Monto $" value={p.monto_venta || ""} onChange={(ev) => {
-                                const val = ev.target.value;
+                  {(o.pacientesList || [])
+                    .filter(p => {
+                      if (sucursalFilter === "Todas") return true;
+                      const notas = (p.notas_clinicas || "").toLowerCase();
+                      const sf = sucursalFilter.toLowerCase();
+                      return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
+                    })
+                    .map((p) => {
+                      const isOperativo = p.notas_clinicas?.toLowerCase().includes("operativo") || p.producto_actual?.toLowerCase().includes("operativo");
+                      return (
+                        <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s", cursor: "pointer" }} 
+                          onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} 
+                          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                          onClick={() => { setEditingPatient({...p}); setSelectedPatient(p); }}
+                        >
+                          <td style={{ padding: "16px 24px" }}>
+                            <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{p.nombre || "Sin Nombre"}</div>
+                            <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>RUT: {p.rut || "—"}</div>
+                            {isOperativo && (
+                              <div style={{ display: "inline-block", marginTop: 8, fontSize: 10, background: `${C.neonBlue}20`, color: C.neonBlue, padding: "2px 8px", borderRadius: 12, fontWeight: 600, border: `1px solid ${C.neonBlue}40` }}>
+                                LEAD OPERATIVO
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: "16px 24px" }}>
+                            <div style={{ fontSize: 13, color: C.text }}>{p.telefono || "—"}</div>
+                            <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Visita: {p.fecha_ultima_visita || "—"}</div>
+                          </td>
+                          <td style={{ padding: "16px 24px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <select value={p.estado_compra || "Pendiente"} onClick={e => e.stopPropagation()} onChange={(ev) => {
+                                const newEstado = ev.target.value;
                                 setOpticaData(prev => ({
                                   ...prev,
-                                  pacientesList: prev.pacientesList.map((px, ix) => ix === i ? { ...px, monto_venta: val } : px)
+                                  pacientesList: prev.pacientesList.map(px => px.id === p.id ? { ...px, estado_compra: newEstado } : px)
                                 }));
-                              }} style={{ background: C.bg, border: `1px solid ${C.neonGreen}40`, color: C.neonGreen, padding: "4px 8px", borderRadius: 6, fontSize: 12, outline: "none", width: 100, fontWeight: 700 }} />
-                            )}
-                          </div>
-                        </td>
-                        <td style={{ padding: "16px 24px" }}>
-                          <a 
-                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reserva+Operativo+-+${encodeURIComponent(p.nombre)}&details=Teléfono:+${encodeURIComponent(p.telefono)}%0A%0A${encodeURIComponent(p.notas_clinicas || "")}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = C.neonBlue; e.currentTarget.style.color = "#fff"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = `${C.neonBlue}20`; e.currentTarget.style.color = C.neonBlue; }}
-                          >
-                            📅 Agendar en Google
-                          </a>
-                        </td>
-                      </tr>
-                    );
-                  }) : (
+                              }} style={{ background: p.estado_compra === "Compró" ? `${C.neonGreen}20` : p.estado_compra === "No Compró" ? `${C.neonRed}20` : C.bg, border: `1px solid ${p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.border}`, color: p.estado_compra === "Compró" ? C.neonGreen : p.estado_compra === "No Compró" ? C.neonRed : C.text, padding: "4px 8px", borderRadius: 6, fontSize: 11, outline: "none", fontWeight: 600 }}>
+                                <option>Pendiente</option>
+                                <option>Compró</option>
+                                <option>No Compró</option>
+                              </select>
+                              {p.estado_compra === "Compró" && (
+                                <input type="number" placeholder="Monto $" value={p.monto_venta || ""} onClick={e => e.stopPropagation()} onChange={(ev) => {
+                                  const val = ev.target.value;
+                                  setOpticaData(prev => ({
+                                    ...prev,
+                                    pacientesList: prev.pacientesList.map(px => px.id === p.id ? { ...px, monto_venta: val } : px)
+                                  }));
+                                }} style={{ background: C.bg, border: `1px solid ${C.neonGreen}40`, color: C.neonGreen, padding: "4px 8px", borderRadius: 6, fontSize: 12, outline: "none", width: 100, fontWeight: 700 }} />
+                              )}
+                            </div>
+                          </td>
+                          <td style={{ padding: "16px 24px" }}>
+                            <a 
+                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reserva+Operativo+-+${encodeURIComponent(p.nombre || "")}&details=Teléfono:+${encodeURIComponent(p.telefono || "")}%0A%0A${encodeURIComponent(p.notas_clinicas || "")}`} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = C.neonBlue; e.currentTarget.style.color = "#fff"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = `${C.neonBlue}20`; e.currentTarget.style.color = C.neonBlue; }}
+                            >
+                              📅 Google
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {(o.pacientesList || []).filter(p => {
+                    if (sucursalFilter === "Todas") return true;
+                    const notas = (p.notas_clinicas || "").toLowerCase();
+                    const sf = sucursalFilter.toLowerCase();
+                    return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
+                  }).length === 0 && (
                     <tr>
                       <td colSpan="4" style={{ padding: "40px", textAlign: "center", color: C.textDim, fontSize: 14 }}>
                         {sucursalFilter !== "Todas" ? `No hay pacientes en "${sucursalFilter}".` : "Aún no hay pacientes o leads capturados."}
                       </td>
                     </tr>
-                  );
-                  })()}
+                  )}
                 </tbody>
               </table>
             </div>

@@ -14,8 +14,8 @@ const OPTICAS_INICIALES = [
   {
     id: 1, nombre: "Óptica Glow Vision", dueño: "Primo (Punitaqui)", 
     plan: "Anual", sucursales: 1, estado: "activo", 
-    mensualidad: 89990, ultimoPago: "2026-04-15", vencimiento: "2026-05-15",
-    telefono: "+56912345678", ciudad: "Punitaqui"
+    mensualidad: 89990, instalacion: 0, ultimoPago: "2026-04-15", vencimiento: "2026-05-15",
+    telefono: "+56912345678", ciudad: "Punitaqui", notas: "Primer cliente piloto."
   },
 ];
 
@@ -25,7 +25,7 @@ export default function AukenAdmin() {
   const [pass, setPass] = useState("");
   const [opticas, setOpticas] = useState(OPTICAS_INICIALES);
   const [showAdd, setShowAdd] = useState(false);
-  const [newOptica, setNewOptica] = useState({ nombre: "", dueño: "", plan: "Mensual", sucursales: 1, telefono: "", ciudad: "", mensualidad: 89990 });
+  const [newOptica, setNewOptica] = useState({ nombre: "", dueño: "", plan: "Mensual", sucursales: 1, telefono: "", ciudad: "", mensualidad: 89990, instalacion: 150000, notas: "" });
 
   useEffect(() => {
     if (localStorage.getItem("auken_admin") === "true") setAuthed(true);
@@ -67,9 +67,14 @@ export default function AukenAdmin() {
 
   const updatePlan = (id, newPlan) => {
     const precios = { "Mensual": 89990, "Anual": 890000, "Multi-Sucursal": 250000 };
+    const instalacion = { "Mensual": 150000, "Anual": 0, "Multi-Sucursal": 400000 };
     setOpticas(prev => prev.map(o => 
-      o.id === id ? { ...o, plan: newPlan, mensualidad: precios[newPlan] } : o
+      o.id === id ? { ...o, plan: newPlan, mensualidad: precios[newPlan], instalacion: instalacion[newPlan] } : o
     ));
+  };
+
+  const updateNotas = (id, notas) => {
+    setOpticas(prev => prev.map(o => o.id === id ? { ...o, notas } : o));
   };
 
   const totalMRR = opticas.filter(o => o.estado === "activo").reduce((s, o) => s + o.mensualidad, 0);
@@ -144,7 +149,7 @@ export default function AukenAdmin() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: `${C.bg}80` }}>
-                {["Óptica", "Plan", "Mensualidad", "Último Pago", "Estado", "Acción"].map(h => (
+                {["Óptica", "Plan", "Instalación", "Mensualidad", "Último Pago", "Notas", "Estado", "Acción"].map(h => (
                   <th key={h} style={{ padding: "14px 20px", fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", textAlign: "left" }}>{h}</th>
                 ))}
               </tr>
@@ -167,10 +172,21 @@ export default function AukenAdmin() {
                       <option value="Multi-Sucursal">Multi-Sucursal</option>
                     </select>
                   </td>
+                  <td style={{ padding: "16px 20px", fontSize: 13, fontWeight: 600, color: C.dim }}>
+                    ${(o.instalacion || 0).toLocaleString("es-CL")}
+                  </td>
                   <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 700, color: C.green }}>
                     ${o.mensualidad.toLocaleString("es-CL")}
                   </td>
                   <td style={{ padding: "16px 20px", fontSize: 13, color: C.dim }}>{o.ultimoPago}</td>
+                  <td style={{ padding: "16px 20px" }}>
+                    <input 
+                      value={o.notas || ""} 
+                      onChange={(e) => updateNotas(o.id, e.target.value)}
+                      placeholder="Sin notas..."
+                      style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.dim, padding: "4px 8px", borderRadius: 4, fontSize: 11, outline: "none", width: 120 }}
+                    />
+                  </td>
                   <td style={{ padding: "16px 20px" }}>
                     <span style={{
                       background: o.estado === "activo" ? `${C.green}20` : `${C.red}20`,
@@ -222,9 +238,17 @@ export default function AukenAdmin() {
                 </select>
                 <input type="number" placeholder="N° Sucursales" value={newOptica.sucursales} onChange={e => setNewOptica({...newOptica, sucursales: Number(e.target.value)})} style={{ width: 100, background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               </div>
-              <div style={{ fontSize: 12, color: C.dim, background: `${C.green}10`, padding: "8px 12px", borderRadius: 6 }}>
-                💰 Mensualidad: <b style={{ color: C.green }}>${newOptica.mensualidad.toLocaleString("es-CL")}</b> CLP
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 10, color: C.dim, marginBottom: 4, display: "block" }}>Costo Instalación</label>
+                  <input type="number" placeholder="Instalación $" value={newOptica.instalacion} onChange={e => setNewOptica({...newOptica, instalacion: Number(e.target.value)})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 10, color: C.dim, marginBottom: 4, display: "block" }}>Mensualidad</label>
+                  <input type="number" placeholder="Mensualidad $" value={newOptica.mensualidad} onChange={e => setNewOptica({...newOptica, mensualidad: Number(e.target.value)})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                </div>
               </div>
+              <textarea placeholder="Notas internas..." value={newOptica.notas} onChange={e => setNewOptica({...newOptica, notas: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none", resize: "none" }} rows={2} />
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: C.orange, color: "#000", border: "none", padding: 12, borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>Registrar</button>
