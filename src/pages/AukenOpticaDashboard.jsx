@@ -24,9 +24,9 @@ const C = {
 // ── CONFIGURACIÓN DE LA ÓPTICA PRINCIPAL ───────────────────────
 const MI_OPTICA = {
   id: 1, 
-  name: "Óptica Visión Clara", 
-  city: "Providencia",
-  plan: "Aukén Pro", 
+  name: "Ópticas Glow Vision", 
+  city: "Punitaqui",
+  plan: "Multi-Sucursal", 
   status: "active", 
   since: "2025-01-15",
   owner: "Administrador", 
@@ -207,7 +207,10 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.neonGreen, boxShadow: `0 0 10px ${C.neonGreen}` }} />
               <div style={{ fontSize: 12, color: C.neonGreen, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>Sistema En Línea</div>
             </div>
-            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 28, color: C.text }}>{o.name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 28, color: C.text }}>{o.name}</div>
+              <button onClick={() => setShowProfileModal(true)} style={{ background: "transparent", border: "none", color: C.neonBlue, cursor: "pointer", fontSize: 16, opacity: 0.7 }}>✏️</button>
+            </div>
             <div style={{ fontSize: 13, color: C.textDim, marginTop: 4 }}>
               {o.city} · Gestor: {o.owner} · {o.phone}
             </div>
@@ -555,6 +558,8 @@ export default function AukenOpticaDashboard() {
   const [sucursalFilter, setSucursalFilter] = useState("Todas");
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [editingPatient, setEditingPatient] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(MI_OPTICA);
 
   const handleScanReceta = async (e) => {
     const file = e.target.files[0];
@@ -1025,6 +1030,46 @@ export default function AukenOpticaDashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* MODAL EDITAR PERFIL ÓPTICA */}
+      {showProfileModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 110 }}>
+          <GlassCard style={{ width: 450, padding: 30 }}>
+            <h2 style={{ fontSize: 20, marginBottom: 20, color: C.text }}>Editar Perfil de Óptica</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Nombre Comercial</label>
+                <input value={editingProfile.name} onChange={e => setEditingProfile({...editingProfile, name: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Ubicación Principal</label>
+                <input value={editingProfile.city} onChange={e => setEditingProfile({...editingProfile, city: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Teléfono Contacto</label>
+                  <input value={editingProfile.phone} onChange={e => setEditingProfile({...editingProfile, phone: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Plan</label>
+                  <select value={editingProfile.plan} onChange={e => setEditingProfile({...editingProfile, plan: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }}>
+                    <option>Aukén Basic</option>
+                    <option>Aukén Pro</option>
+                    <option>Multi-Sucursal</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                <button onClick={() => setShowProfileModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+                <button onClick={() => {
+                  setOpticaData(prev => ({ ...prev, ...editingProfile }));
+                  setShowProfileModal(false);
+                  alert("Perfil actualizado correctamente");
+                }} style={{ flex: 1, background: C.neonBlue, color: "#fff", border: "none", padding: 12, borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>💾 Guardar Cambios</button>
+              </div>
+            </div>
+          </GlassCard>
         </div>
       )}
     </div>
