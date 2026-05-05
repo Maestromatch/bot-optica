@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 // ── PALETA FUTURISTA (Dark Mode No Invasivo) ───────────────────
@@ -13,8 +14,8 @@ const C = {
   textMuted:  "#475569", // Texto muy apagado
   
   // Acentos de estado
-  neonBlue:   "#38BDF8", // Cyan brillante
-  neonBlueD:  "#0284C7", 
+  neonBlue:   "#FB923C", // Naranjo suave (Glow Vision)
+  neonBlueD:  "#7DD3FC", // Azul claro suave
   neonGreen:  "#10B981", // Esmeralda
   neonAmber:  "#F59E0B", // Ambar/Dorado
   neonRed:    "#F43F5E", // Rosa/Rojo
@@ -319,10 +320,11 @@ function OpticaDetail({ optica: o, showModal, setShowModal }) {
 
 // ── ROOT ─────────────────────────────────────────────────────────
 export default function AukenOpticaDashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [showModal, setShowModal] = useState(false);
-  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "" });
+  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "" });
 
   const handleAddLead = async (e) => {
     e.preventDefault();
@@ -330,7 +332,7 @@ export default function AukenOpticaDashboard() {
       nombre: newLead.nombre,
       rut: newLead.rut,
       telefono: newLead.telefono,
-      notas_clinicas: `Ingresado manualmente. Comuna: ${newLead.comuna}`,
+      notas_clinicas: `Ingresado manualmente. Comuna: ${newLead.comuna}${newLead.notas ? ` | Notas: ${newLead.notas}` : ""}`,
       fecha_ultima_visita: new Date().toISOString().split('T')[0]
     };
     
@@ -342,7 +344,7 @@ export default function AukenOpticaDashboard() {
         patients: prev.patients + 1
       }));
       setShowModal(false);
-      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "" });
+      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "", notas: "" });
     } else {
       alert("Error al guardar el prospecto");
     }
@@ -421,6 +423,14 @@ export default function AukenOpticaDashboard() {
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.neonGreen, boxShadow: `0 0 8px ${C.neonGreen}` }}></span>
             Sistema Activo
           </div>
+          <button 
+            onClick={() => { localStorage.removeItem("auken_auth"); navigate("/login"); }}
+            style={{ background: "transparent", border: `1px solid ${C.border}`, color: C.textDim, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.color = C.neonRed}
+            onMouseLeave={e => e.currentTarget.style.color = C.textDim}
+          >
+            Cerrar Sesión
+          </button>
         </div>
       </nav>
 
@@ -449,6 +459,7 @@ export default function AukenOpticaDashboard() {
               <input placeholder="RUT (Opcional)" value={newLead.rut} onChange={e => setNewLead({...newLead, rut: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               <input required placeholder="Teléfono (+569...)" value={newLead.telefono} onChange={e => setNewLead({...newLead, telefono: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               <input required placeholder="Comuna o Ubicación" value={newLead.comuna} onChange={e => setNewLead({...newLead, comuna: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <textarea placeholder="Notas adicionales (opcional)" value={newLead.notas} onChange={e => setNewLead({...newLead, notas: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none", resize: "none", fontFamily: "'Inter', sans-serif" }} rows={3} />
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 10, borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Guardar</button>
