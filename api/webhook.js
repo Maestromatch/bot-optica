@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": \`Bearer \${GROQ_API_KEY}\`,
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     let aiReply = groqData.choices?.[0]?.message?.content || "Hubo un error al procesar tu mensaje.";
 
     // 6. Lógica de Captura de Leads (Operativos)
-    const registerMatch = aiReply.match(/\\[REGISTER:\s*(.*?)\s*\\|\\s*(.*?)\s*\\|\\s*(.*?)\s*\\]/);
+    const registerMatch = aiReply.match(/\[REGISTER:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\]/);
     if (registerMatch && !paciente) {
       const [_, nombre, rut, comuna] = registerMatch;
       
@@ -108,13 +108,13 @@ export default async function handler(req, res) {
         nombre: nombre.trim(),
         rut: rut.trim(),
         telefono: userPhone,
-        notas_clinicas: \`Paciente captado por WhatsApp. Comuna de interés: \${comuna.trim()} (Posible Operativo)\`,
+        notas_clinicas: `Paciente captado por WhatsApp. Comuna de interés: ${comuna.trim()} (Posible Operativo)`,
         producto_actual: "Operativo Visual",
         fecha_ultima_visita: new Date().toISOString().split('T')[0]
       });
 
       // Limpiar la etiqueta secreta antes de enviar el mensaje al cliente
-      aiReply = aiReply.replace(/\\[REGISTER:.*\\]/g, "").trim();
+      aiReply = aiReply.replace(/\[REGISTER:.*\]/g, "").trim();
     }
 
     // 7. Enviar la respuesta de vuelta a WhatsApp vía Meta API
