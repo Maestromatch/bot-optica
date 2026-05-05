@@ -28,14 +28,25 @@ export default async function handler(req, res) {
     }
 
     const payload = {
-      model: "llama-3.2-11b-vision-preview",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Analiza esta imagen de una receta óptica y extrae la información. Extrae: Fecha de emisión de la receta, Ojo Derecho (OD) [Esfera, Cilindro, Eje], Ojo Izquierdo (OI) [Esfera, Cilindro, Eje], y Distancia Pupilar (DP) o Adición si están presentes. Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura: {\"fecha\": \"\", \"OD\": {\"esfera\": \"\", \"cilindro\": \"\", \"eje\": \"\"}, \"OI\": {\"esfera\": \"\", \"cilindro\": \"\", \"eje\": \"\"}, \"adicion\": \"\", \"dp\": \"\"}. No devuelvas ningún texto extra, solo el JSON puro."
+              text: `Eres un experto en óptica. Analiza esta imagen de una receta óptica.
+Extrae la siguiente información:
+- Fecha de emisión de la receta
+- Ojo Derecho (OD): Esfera, Cilindro, Eje
+- Ojo Izquierdo (OI): Esfera, Cilindro, Eje
+- Distancia Pupilar (DP) si está presente
+- Adición si está presente
+
+Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin explicaciones, sin bloques de código. Solo el JSON puro:
+{"fecha": "", "OD": {"esfera": "", "cilindro": "", "eje": ""}, "OI": {"esfera": "", "cilindro": "", "eje": ""}, "adicion": "", "dp": ""}
+
+Si no puedes leer algún campo, déjalo como cadena vacía "".`
             },
             {
               type: "image_url",
@@ -47,7 +58,7 @@ export default async function handler(req, res) {
         }
       ],
       temperature: 0.1,
-      max_tokens: 1024,
+      max_tokens: 512,
     };
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -62,15 +73,32 @@ export default async function handler(req, res) {
     const data = await response.json();
     
     if (data.error) {
+      console.error("Groq API error:", JSON.stringify(data.error));
       throw new Error(data.error.message || "Error en Groq API");
     }
 
+    if (!data.choices || !data.choices[0]) {
+      throw new Error("Respuesta vacía de Groq");
+    }
+
     const rawContent = data.choices[0].message.content;
+    console.log("Groq raw response:", rawContent);
     
-    // Limpiar el JSON si viene con bloque de código markdown
+    // Extraer JSON de la respuesta (puede venir con texto extra o bloques de código)
     let jsonString = rawContent;
-    if (jsonString.includes('```')) {
-      jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // Intentar extraer JSON de bloque de código
+    const codeBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1].trim();
+    }
+
+    // Intentar extraer JSON con regex si no es un JSON válido directamente
+    if (!jsonString.startsWith('{')) {
+      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      }
     }
 
     const parsedJson = JSON.parse(jsonString);

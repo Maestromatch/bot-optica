@@ -8,6 +8,7 @@ import AukenOpticaLanding   from "./pages/AukenOpticaLanding";
 import AukenOpticaDashboard from "./pages/AukenOpticaDashboard";
 import AukenIntegrations    from "./pages/AukenIntegrations";
 import AukenLogin           from "./pages/AukenLogin";
+import AukenAdmin           from "./pages/AukenAdmin";
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/optica/dashboard"  element={<ProtectedRoute><AukenOpticaDashboard /></ProtectedRoute>} />
         
         <Route path="/integrations"      element={<AukenIntegrations />} />
+        <Route path="/admin"             element={<AukenAdmin />} />
       </Routes>
     </BrowserRouter>
   );
