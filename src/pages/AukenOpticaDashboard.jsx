@@ -31,6 +31,14 @@ const MI_OPTICA = {
   since: "2025-01-15",
   owner: "Administrador", 
   phone: "+56987654321",
+  patients: 0,
+  vigentes: 0,
+  proximasControl: 0,
+  recetasVencidas: 0,
+  consultasMes: 0,
+  pacientesList: [],
+  weeklyConsultas: [0, 0, 0, 0, 0, 0, 0],
+  alertas: [],
   automations: {
     thanks: true,
     adjustment: true,
@@ -39,9 +47,16 @@ const MI_OPTICA = {
 };
 
 // ── MICRO-COMPONENTES ────────────────────────────────────────────
-function Sparkline({ data, color, w = 100, h = 32 }) {
+function Sparkline({ data = [], color, w = 100, h = 32 }) {
+  if (!data || data.length === 0) return <div style={{ width: w, height: h }} />;
   const max = Math.max(...data, 1);
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
+  const len = data.length;
+  const pts = data.map((v, i) => {
+    const x = len > 1 ? (i / (len - 1)) * w : w / 2;
+    const y = h - (v / max) * h;
+    return `${x},${y}`;
+  }).join(" ");
+  
   return (
     <svg width={w} height={h}>
       <defs>
@@ -51,7 +66,7 @@ function Sparkline({ data, color, w = 100, h = 32 }) {
         </linearGradient>
       </defs>
       <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
-      <polyline points={`0,${h} ${pts} ${w},${h}`} fill={`url(#grad-${color})`} />
+      {len > 1 && <polyline points={`0,${h} ${pts} ${w},${h}`} fill={`url(#grad-${color})`} />}
     </svg>
   );
 }
@@ -92,7 +107,7 @@ function SalesChart({ pacientes }) {
   const [period, setPeriod] = useState("diario");
 
   const getBarData = () => {
-    const compras = pacientes.filter(p => p.estado_compra === "Compró" && p.monto_venta);
+    const compras = (pacientes || []).filter(p => p && p.estado_compra === "Compró" && p.monto_venta);
     const now = new Date();
     
     if (period === "diario") {
@@ -181,7 +196,7 @@ function SalesChart({ pacientes }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient, vapiCallStatus, handleStartVapiCall, handleStopVapiCall }) {
+function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient, vapiCallStatus, handleStartVapiCall, handleStopVapiCall, setShowProfileModal }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -208,11 +223,11 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <div style={{ fontSize: 12, color: C.neonGreen, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>Sistema En Línea</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 28, color: C.text }}>{o.name}</div>
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 28, color: C.text }}>{o?.name}</div>
               <button onClick={() => setShowProfileModal(true)} style={{ background: "transparent", border: "none", color: C.neonBlue, cursor: "pointer", fontSize: 16, opacity: 0.7 }}>✏️</button>
             </div>
             <div style={{ fontSize: 13, color: C.textDim, marginTop: 4 }}>
-              {o.city} · Gestor: {o.owner} · {o.phone}
+              {o?.city} · Gestor: {o?.owner} · {o?.phone}
             </div>
           </div>
           <div style={{ background: `${C.neonBlue}15`, border: `1px solid ${C.neonBlue}40`, color: C.neonBlue, borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 600, letterSpacing: "0.05em" }}>
@@ -249,16 +264,16 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
           {/* Main KPIs */}
           <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             <Fade delay={0}>
-              <KPI label="Total Pacientes" value={o.patients} color={C.text} sub="En la base de datos" />
+              <KPI label="Total Pacientes" value={o?.patients} color={C.text} sub="En la base de datos" />
             </Fade>
             <Fade delay={50}>
-              <KPI label="Vigentes" value={o.vigentes} color={C.neonGreen} sub="Menos de 1 año" />
+              <KPI label="Vigentes" value={o?.vigentes} color={C.neonGreen} sub="Menos de 1 año" />
             </Fade>
             <Fade delay={100}>
-              <KPI label="Próximas a Control" value={o.proximasControl} color={C.neonAmber} sub="En menos de 30 días" />
+              <KPI label="Próximas a Control" value={o?.proximasControl} color={C.neonAmber} sub="En menos de 30 días" />
             </Fade>
             <Fade delay={150}>
-              <KPI label="Recetas Vencidas" value={o.recetasVencidas} color={C.neonRed} sub="Requieren acción" glow={o.recetasVencidas > 0} />
+              <KPI label="Recetas Vencidas" value={o?.recetasVencidas} color={C.neonRed} sub="Requieren acción" glow={(o?.recetasVencidas || 0) > 0} />
             </Fade>
           </div>
 
@@ -268,7 +283,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <GlassCard style={{ borderTop: `2px solid ${C.neonGreen}` }}>
                 <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>💸 Ventas de Hoy</div>
                 <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonGreen, textShadow: `0 0 12px ${C.neonGreen}40` }}>
-                  ${(o.pacientesList || []).filter(p => p.estado_compra === "Compró" && p.fecha_ultima_visita === new Date().toISOString().split('T')[0]).reduce((sum, p) => sum + (Number(p.monto_venta) || 0), 0).toLocaleString("es-CL")}
+                  ${((o?.pacientesList || []).filter(p => p && p.estado_compra === "Compró" && p.fecha_ultima_visita === new Date().toISOString().split('T')[0]).reduce((sum, p) => sum + (Number(p?.monto_venta) || 0), 0)).toLocaleString("es-CL")}
                 </div>
                 <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>CLP acumulados hoy</div>
               </GlassCard>
@@ -277,8 +292,8 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <GlassCard style={{ borderTop: `2px solid ${C.neonAmber}` }}>
                 <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>🎯 Tasa de Cierre</div>
                 {(() => {
-                  const total = (o.pacientesList || []).filter(p => p.estado_compra && p.estado_compra !== "Pendiente").length;
-                  const compras = (o.pacientesList || []).filter(p => p.estado_compra === "Compró").length;
+                  const total = (o?.pacientesList || []).filter(p => p && p.estado_compra && p.estado_compra !== "Pendiente").length;
+                  const compras = (o?.pacientesList || []).filter(p => p && p.estado_compra === "Compró").length;
                   const pct = total > 0 ? Math.round((compras / total) * 100) : 0;
                   return <>
                     <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonAmber }}>{pct}%</div>
@@ -291,7 +306,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <GlassCard style={{ borderTop: `2px solid ${C.neonBlue}` }}>
                 <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>📊 Ventas Totales</div>
                 <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 32, color: C.neonBlue }}>
-                  ${(o.pacientesList || []).filter(p => p.estado_compra === "Compró").reduce((sum, p) => sum + (Number(p.monto_venta) || 0), 0).toLocaleString("es-CL")}
+                  ${((o?.pacientesList || []).filter(p => p && p.estado_compra === "Compró").reduce((sum, p) => sum + (Number(p?.monto_venta) || 0), 0)).toLocaleString("es-CL")}
                 </div>
                 <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>CLP acumulados total</div>
               </GlassCard>
@@ -304,10 +319,10 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <GlassCard>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.textDim, textTransform: "uppercase", letterSpacing: "0.05em" }}>Actividad Chatbot</div>
-                  <div style={{ color: C.neonBlue, fontWeight: 700 }}>{o.consultasMes} consultas</div>
+                  <div style={{ color: C.neonBlue, fontWeight: 700 }}>{o?.consultasMes} consultas</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-end", height: 120 }}>
-                  <Sparkline data={o.weeklyConsultas} color={C.neonBlue} w={400} h={120} />
+                  <Sparkline data={o?.weeklyConsultas || []} color={C.neonBlue} w={400} h={120} />
                 </div>
               </GlassCard>
             </Fade>
@@ -317,11 +332,11 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
               <GlassCard>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textDim, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16 }}>Alertas del Sistema</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {o.alertas.length === 0 ? (
+                  {(o?.alertas || []).length === 0 ? (
                     <div style={{ color: C.textMuted, fontSize: 13, padding: 16, textAlign: "center", background: `${C.border}40`, borderRadius: 8 }}>
                       No hay alertas pendientes. Todo en orden.
                     </div>
-                  ) : o.alertas.map((a, i) => (
+                  ) : (o?.alertas || []).map((a, i) => (
                     <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 16px", background: `${C.neonRed}10`, borderLeft: `2px solid ${C.neonRed}`, borderRadius: 8 }}>
                       <div style={{ color: C.neonRed, fontSize: 18 }}>⚠️</div>
                       <div style={{ flex: 1, fontSize: 13, color: C.text, fontWeight: 500 }}>{a}</div>
@@ -329,7 +344,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                         onClick={() => {
                           setOpticaData(prev => ({
                             ...prev,
-                            alertas: prev.alertas.filter((_, index) => index !== i)
+                            alertas: (prev?.alertas || []).filter((_, index) => index !== i)
                           }));
                         }}
                         style={{ background: C.neonRed, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
@@ -344,7 +359,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
 
           {/* Sales Chart */}
           <Fade delay={300}>
-            <SalesChart pacientes={o.pacientesList || []} />
+            <SalesChart pacientes={o?.pacientesList || []} />
           </Fade>
         </div>
       )}
@@ -355,7 +370,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Base de Datos CRM</div>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <div style={{ fontSize: 13, background: `${C.neonGreen}20`, color: C.neonGreen, padding: "4px 12px", borderRadius: 20, fontWeight: 500 }}>{o.pacientesList?.length || 0} Registros</div>
+                <div style={{ fontSize: 13, background: `${C.neonGreen}20`, color: C.neonGreen, padding: "4px 12px", borderRadius: 20, fontWeight: 500 }}>{(o?.pacientesList || []).length || 0} Registros</div>
                 <button onClick={() => setShowModal(true)} style={{ background: C.neonBlue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "0.2s" }}>
                   + Nuevo Prospecto
                 </button>
@@ -373,15 +388,17 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                   </tr>
                 </thead>
                 <tbody>
-                  {(o.pacientesList || [])
+                  {(o?.pacientesList || [])
                     .filter(p => {
+                      if (!p) return false;
                       if (sucursalFilter === "Todas") return true;
-                      const notas = (p.notas_clinicas || "").toLowerCase();
-                      const sf = sucursalFilter.toLowerCase();
-                      return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
+                      const notas = (p?.notas_clinicas || "").toLowerCase();
+                      const sf = (sucursalFilter || "").toLowerCase();
+                      return notas.includes(sf) || (p?.comuna || "").toLowerCase().includes(sf) || (p?.operativo || "").toLowerCase().includes(sf) || (p?.sucursal || "").toLowerCase().includes(sf);
                     })
                     .map((p) => {
-                      const isOperativo = p.notas_clinicas?.toLowerCase().includes("operativo") || p.producto_actual?.toLowerCase().includes("operativo");
+                      if (!p) return null;
+                      const isOperativo = p?.notas_clinicas?.toLowerCase().includes("operativo") || p?.producto_actual?.toLowerCase().includes("operativo");
                       return (
                         <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.2s", cursor: "pointer" }} 
                           onMouseEnter={(e) => e.currentTarget.style.background = `${C.surfaceL}40`} 
@@ -448,10 +465,12 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                         </tr>
                       );
                     })}
-                  {(o.pacientesList || []).filter(p => {
-                    if (sucursalFilter === "Todas") return true;
+                  {(o?.pacientesList || []).filter(p => {
+                    if (!p) return false;
+                    const sFilter = sucursalFilter || "Todas";
+                    if (sFilter === "Todas") return true;
                     const notas = (p.notas_clinicas || "").toLowerCase();
-                    const sf = sucursalFilter.toLowerCase();
+                    const sf = sFilter.toLowerCase();
                     return notas.includes(sf) || (p.comuna || "").toLowerCase().includes(sf) || (p.operativo || "").toLowerCase().includes(sf) || (p.sucursal || "").toLowerCase().includes(sf);
                   }).length === 0 && (
                     <tr>
@@ -512,7 +531,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Paso 1: Seleccionar Audiencia</label>
                   <select style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "10px 14px", borderRadius: 8, outline: "none" }}>
-                    <option>Pacientes que NO compraron ({(o.pacientesList || []).filter(p => p.estado_compra === "No Compró").length})</option>
+                    <option>Pacientes que NO compraron ({(o?.pacientesList || []).filter(p => p && p.estado_compra === "No Compró").length})</option>
                     <option>Solo Recetas Vencidas ({o.recetasVencidas || 0})</option>
                     <option>Leads de Operativos Recientes</option>
                   </select>
@@ -702,6 +721,7 @@ export default function AukenOpticaDashboard() {
 
   // Helper para recalcular KPIs
   const refreshStats = (list) => {
+    if (!list || !Array.isArray(list)) return;
     const now = new Date();
     const vencidas = list.filter(p => p.recetaData?.fecha && (now - new Date(p.recetaData.fecha)) > 365 * 24 * 60 * 60 * 1000).length;
     const proximas = list.filter(p => p.recetaData?.fecha && (now - new Date(p.recetaData.fecha)) > 330 * 24 * 60 * 60 * 1000 && (now - new Date(p.recetaData.fecha)) <= 365 * 24 * 60 * 60 * 1000).length;
@@ -850,6 +870,7 @@ export default function AukenOpticaDashboard() {
               vapiCallStatus={vapiCallStatus}
               handleStartVapiCall={handleStartVapiCall}
               handleStopVapiCall={handleStopVapiCall}
+              setShowProfileModal={setShowProfileModal}
             />
           </Fade>
         )}
