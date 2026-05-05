@@ -198,8 +198,11 @@ function OpticaDetail({ optica: o }) {
           <GlassCard style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Base de Datos CRM</div>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ fontSize: 13, background: `${C.neonGreen}20`, color: C.neonGreen, padding: "4px 12px", borderRadius: 20, fontWeight: 500 }}>{o.pacientesList?.length || 0} Registros</div>
+                <button onClick={() => setShowModal(true)} style={{ background: C.neonBlue, color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "0.2s" }}>
+                  + Nuevo Prospecto
+                </button>
               </div>
             </div>
             
@@ -268,9 +271,42 @@ function OpticaDetail({ optica: o }) {
 
       {tab === "campañas ia" && (
         <Fade>
-          <GlassCard style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", borderStyle: "dashed", borderColor: C.border }}>
-            <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.5 }}>🚧</div>
-            <div style={{ fontSize: 14, color: C.textDim }}>El módulo de Campañas IA (Mensajes Masivos) está en desarrollo para la próxima fase.</div>
+          <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonAmber}` }}>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Generador de Campañas Masivas 🚀</div>
+              <div style={{ fontSize: 14, color: C.textDim }}>Envía mensajes personalizados de WhatsApp a múltiples prospectos con un solo clic.</div>
+            </div>
+
+            <div style={{ display: "flex", gap: 32 }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>1. Audiencia (A quién enviar)</label>
+                  <select style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "10px 14px", borderRadius: 8, outline: "none" }}>
+                    <option>Todos los pacientes ({o.patients})</option>
+                    <option>Solo Recetas Vencidas ({o.recetasVencidas})</option>
+                    <option>Leads de Operativos Recientes</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 8 }}>2. ¿Qué quieres vender/informar?</label>
+                  <textarea 
+                    rows={4} 
+                    placeholder="Ej: Estaré este viernes en Punitaqui con 50% de descuento en cristales. Pregúntales a qué hora pueden venir..."
+                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "12px", borderRadius: 8, resize: "none", outline: "none", fontFamily: "'Inter', sans-serif" }}
+                  />
+                </div>
+                <button style={{ background: `linear-gradient(90deg, ${C.neonAmber}, #F59E0B)`, color: "#000", border: "none", borderRadius: 8, padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>
+                  Lanzar Campaña IA
+                </button>
+              </div>
+
+              <div style={{ flex: 1, background: C.bg, borderRadius: 12, padding: 20, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", marginBottom: 12 }}>Vista Previa del Mensaje (Ejemplo)</div>
+                <div style={{ background: "#054D44", padding: "12px 16px", borderRadius: "12px 12px 12px 0", color: "#E9EDEF", fontSize: 14, maxWidth: "90%", boxShadow: "0 2px 5px rgba(0,0,0,0.2)" }}>
+                  ¡Hola Juan! Soy Aukén de Óptica Glow Vision 😎. Vi que tu receta venció el año pasado y justo este viernes estaremos en Punitaqui con 50% de descuento en cristales. ¿Te anoto para una revisión rápida? Es gratis.
+                </div>
+              </div>
+            </div>
           </GlassCard>
         </Fade>
       )}
@@ -282,6 +318,32 @@ function OpticaDetail({ optica: o }) {
 export default function AukenOpticaDashboard() {
   const [loading, setLoading] = useState(true);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
+  const [showModal, setShowModal] = useState(false);
+  const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "" });
+
+  const handleAddLead = async (e) => {
+    e.preventDefault();
+    const lead = {
+      nombre: newLead.nombre,
+      rut: newLead.rut,
+      telefono: newLead.telefono,
+      notas_clinicas: `Ingresado manualmente. Comuna: ${newLead.comuna}`,
+      fecha_ultima_visita: new Date().toISOString().split('T')[0]
+    };
+    
+    const { data, error } = await supabase.from("pacientes").insert([lead]).select();
+    if (!error && data) {
+      setOpticaData(prev => ({
+        ...prev,
+        pacientesList: [data[0], ...prev.pacientesList],
+        patients: prev.patients + 1
+      }));
+      setShowModal(false);
+      setNewLead({ nombre: "", rut: "", telefono: "", comuna: "" });
+    } else {
+      alert("Error al guardar el prospecto");
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -369,10 +431,29 @@ export default function AukenOpticaDashboard() {
           </div>
         ) : (
           <Fade>
-            <OpticaDetail optica={opticaData} />
+            <OpticaDetail optica={opticaData} showModal={showModal} setShowModal={setShowModal} />
           </Fade>
         )}
       </div>
+
+      {/* MODAL NUEVO PROSPECTO */}
+      {showModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <GlassCard style={{ width: 400, background: C.surface }}>
+            <h3 style={{ fontSize: 18, marginBottom: 20 }}>Ingresar Prospecto Manual</h3>
+            <form onSubmit={handleAddLead} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <input required placeholder="Nombre Completo" value={newLead.nombre} onChange={e => setNewLead({...newLead, nombre: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <input placeholder="RUT (Opcional)" value={newLead.rut} onChange={e => setNewLead({...newLead, rut: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <input required placeholder="Teléfono (+569...)" value={newLead.telefono} onChange={e => setNewLead({...newLead, telefono: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <input required placeholder="Comuna o Ubicación" value={newLead.comuna} onChange={e => setNewLead({...newLead, comuna: e.target.value})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, background: "transparent", border: `1px solid ${C.border}`, color: C.text, padding: 10, borderRadius: 8, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, background: C.neonBlue, border: "none", color: "#fff", padding: 10, borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Guardar</button>
+              </div>
+            </form>
+          </GlassCard>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,25 +28,26 @@ function dbToPatient(row) {
 // PALETA Y CONSTANTES
 // ─────────────────────────────────────────────────────────────────
 const C = {
-  bg:        "#F7F5F0",
-  bgDeep:    "#EFECE5",
-  surface:   "#FFFFFF",
-  border:    "#D8D4CB",
-  borderDark:"#B8B2A7",
-  ink:       "#1A1612",
-  inkMid:    "#4A4540",
-  inkFaint:  "#8A8580",
-  blue:      "#1B3A6B",
-  blueLight: "#2B5BA8",
-  blueGhost: "#E8EEF7",
-  teal:      "#0D6E6E",
-  tealLight: "#E0F2F2",
-  amber:     "#B45309",
-  amberLight:"#FEF3C7",
-  red:       "#991B1B",
-  redLight:  "#FEE2E2",
-  green:     "#166534",
-  greenLight:"#DCFCE7",
+  bg:         "#090A0F",
+  bgDeep:     "#05060A",
+  surface:    "#11131C",
+  surfaceL:   "#1A1D2A",
+  border:     "#23283A",
+  borderDark: "#38BDF840",
+  ink:        "#F8FAFC",
+  inkMid:     "#94A3B8",
+  inkFaint:   "#475569",
+  blue:       "#38BDF8",
+  blueLight:  "#7DD3FC",
+  blueGhost:  "#38BDF815",
+  teal:       "#2DD4BF",
+  tealLight:  "#2DD4BF15",
+  amber:      "#F59E0B",
+  amberLight: "#F59E0B15",
+  red:        "#F43F5E",
+  redLight:   "#F43F5E15",
+  green:      "#10B981",
+  greenLight: "#10B98115",
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -86,21 +87,18 @@ ${p.receta.adicion ? `- Adición: ${p.receta.adicion}` : ""}
     ? `INSTRUCCIÓN: El control de este paciente se aproxima (${p?.nextControl}). Menciona que se acerca la fecha de su próximo control.`
     : "";
 
-  return `Eres "Lente", el asistente virtual de Óptica Visión Clara, una óptica profesional en Santiago de Chile.
+  return `Eres "Aukén", el asistente virtual de Óptica Glow Vision.
 
-Personalidad: Cálido, preciso y confiable. Hablas en español chileno natural. Eres experto en óptica sin ser condescendiente.
+Personalidad: Cálido, preciso y confiable. Hablas de forma persuasiva.
 
 Servicios disponibles:
-- Examen visual computarizado: $25.000
+- Examen visual computarizado: GRATIS al comprar lentes
 - Lentes monofocales desde: $45.000
 - Lentes multifocales progresivos desde: $180.000
-- Lentes de contacto: desde $35.000/mes
-- Lentes de sol con medida: desde $95.000
-- Reparaciones de marcos: desde $8.000
 
-Horarios: Lunes a Viernes 9:30–19:30 · Sábado 10:00–14:00
-Dirección: Av. Italia 1456, Providencia, Santiago
-WhatsApp: +56 9 8765 4321
+Horarios: Lunes a Viernes 11:30–18:30
+Dirección: Caupolicán #763, Punitaqui
+WhatsApp: +56 9 5493 2802
 
 ${fichaSection}
 ${alertSection}
@@ -109,7 +107,7 @@ Reglas:
 1. Si el usuario se identifica por nombre o RUT y está en la ficha, úsala para personalizar.
 2. Explica los valores de receta solo si te lo piden, sin jerga innecesaria.
 3. Si alguien pregunta "¿cuándo fue mi última visita?" o "¿cuál es mi receta?", responde con los datos de la ficha.
-4. Para agendamiento pide: nombre, servicio, y horario preferido.
+4. Para agendamiento de operativos pide: nombre, rut y comuna.
 5. Respuestas: máximo 3 oraciones. Siempre termina con una acción concreta.
 6. Nunca inventes precios ni servicios que no estén listados.`;
 };
@@ -498,8 +496,8 @@ function PanelFichas({ onSelectPatient, activePatient }) {
 // ─────────────────────────────────────────────────────────────────
 function Chat({ activePatient, allPatients = [] }) {
   const WELCOME = activePatient
-    ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a Óptica Visión Clara. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
-    : "¡Hola! Soy Lente, el asistente de Óptica Visión Clara. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?";
+    ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a Óptica Glow Vision. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
+    : "¡Hola! Soy Aukén, el asistente de Óptica Glow Vision. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?";
 
   const [messages, setMessages] = useState([mkMsg("assistant", WELCOME)]);
   const [loading, setLoading] = useState(false);
@@ -602,8 +600,8 @@ function Chat({ activePatient, allPatients = [] }) {
           👁️
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ color: "#fff", fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 14 }}>
-            Lente — Óptica Visión Clara
+          <div style={{ color: "#fff", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 16 }}>
+            Aukén — Monitor de Chat Live
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ADE80", boxShadow: "0 0 4px #4ADE80" }} />
@@ -651,15 +649,15 @@ function Chat({ activePatient, allPatients = [] }) {
       <div style={{ padding: "10px 12px", background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", gap: 8 }}>
         <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-          placeholder={detectedPatient ? `Escríbele a Lente, ${detectedPatient.name.split(" ")[0]}...` : "Escribe tu consulta..."}
+          placeholder={detectedPatient ? `Tomar el control del chat y escribir a ${detectedPatient.name.split(" ")[0]}...` : "Escribe tu consulta..."}
           disabled={loading}
-          style={{ flex: 1, background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: C.ink, outline: "none", fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.6 : 1 }}
+          style={{ flex: 1, background: C.bgDeep, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: C.ink, outline: "none", fontFamily: "'Inter', sans-serif", opacity: loading ? 0.6 : 1 }}
           onFocus={e => e.target.style.borderColor = C.blue}
           onBlur={e => e.target.style.borderColor = C.border}
         />
         <button onClick={() => sendMessage(input)} disabled={!input.trim() || loading}
-          style={{ background: input.trim() && !loading ? C.blue : C.bgDeep, color: input.trim() && !loading ? "#fff" : C.inkFaint, border: "none", borderRadius: 8, width: 40, height: 40, cursor: input.trim() && !loading ? "pointer" : "default", fontSize: 16, transition: "all .2s", flexShrink: 0 }}>
-          {loading ? "…" : "↑"}
+          style={{ background: input.trim() && !loading ? C.amber : C.bgDeep, color: input.trim() && !loading ? "#000" : C.inkFaint, border: "none", borderRadius: 8, padding: "0 16px", cursor: input.trim() && !loading ? "pointer" : "default", fontSize: 13, fontWeight: 700, transition: "all .2s", flexShrink: 0 }}>
+          {loading ? "..." : "Interrumpir IA"}
         </button>
       </div>
 
@@ -707,9 +705,9 @@ export default function AukenOptica() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 28, height: 28, background: C.blue, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👁️</div>
           <div>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 15, color: C.ink }}>Óptica Visión Clara</span>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: C.ink }}>Óptica Glow Vision</span>
             <span style={{ color: C.border, margin: "0 8px" }}>·</span>
-            <span style={{ fontSize: 11, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>sistema aukén</span>
+            <span style={{ fontSize: 11, color: C.amber, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>[MODO MONITOR]</span>
           </div>
         </div>
 
