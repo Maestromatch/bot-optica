@@ -82,6 +82,99 @@ function GlassCard({ children, style = {} }) {
   );
 }
 
+// ── GRÁFICO DE VENTAS ────────────────────────────────────────────
+function SalesChart({ pacientes }) {
+  const [period, setPeriod] = useState("diario");
+
+  const getBarData = () => {
+    const compras = pacientes.filter(p => p.estado_compra === "Compró" && p.monto_venta);
+    const now = new Date();
+    
+    if (period === "diario") {
+      // Last 7 days
+      const labels = [];
+      const values = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        labels.push(i === 0 ? "Hoy" : dayNames[d.getDay()]);
+        values.push(compras.filter(p => p.fecha_ultima_visita === key).reduce((s, p) => s + (Number(p.monto_venta) || 0), 0));
+      }
+      return { labels, values };
+    } else if (period === "semanal") {
+      // Last 4 weeks
+      const labels = ["Semana 4", "Semana 3", "Semana 2", "Esta Semana"];
+      const values = [0, 0, 0, 0];
+      compras.forEach(p => {
+        const pDate = new Date(p.fecha_ultima_visita);
+        const diffDays = Math.floor((now - pDate) / (1000 * 60 * 60 * 24));
+        const weekIdx = Math.min(3, Math.floor(diffDays / 7));
+        values[3 - weekIdx] += Number(p.monto_venta) || 0;
+      });
+      return { labels, values };
+    } else {
+      // Last 6 months
+      const labels = [];
+      const values = [];
+      const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        labels.push(monthNames[d.getMonth()]);
+        values.push(compras.filter(p => {
+          const pd = new Date(p.fecha_ultima_visita);
+          return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+        }).reduce((s, p) => s + (Number(p.monto_venta) || 0), 0));
+      }
+      return { labels, values };
+    }
+  };
+
+  const { labels, values } = getBarData();
+  const maxVal = Math.max(...values, 1);
+  const total = values.reduce((s, v) => s + v, 0);
+
+  return (
+    <GlassCard style={{ borderTop: `2px solid ${C.neonAmber}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.textDim, textTransform: "uppercase", letterSpacing: "0.05em" }}>📊 Desglose de Ventas</div>
+          <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 24, color: C.neonAmber, marginTop: 4 }}>${total.toLocaleString("es-CL")} CLP</div>
+        </div>
+        <div style={{ display: "flex", gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
+          {[["diario", "Diario"], ["semanal", "Semanal"], ["mensual", "Mensual"]].map(([key, label]) => (
+            <button key={key} onClick={() => setPeriod(key)} style={{
+              background: period === key ? C.surfaceL : "transparent",
+              color: period === key ? C.text : C.textMuted,
+              border: period === key ? `1px solid ${C.border}` : "1px solid transparent",
+              borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "0.2s"
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
+        {values.map((v, i) => {
+          const h = maxVal > 0 ? (v / maxVal) * 120 : 0;
+          return (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div style={{ fontSize: 10, color: v > 0 ? C.neonAmber : C.textMuted, fontWeight: 700 }}>
+                {v > 0 ? `$${(v / 1000).toFixed(0)}k` : "—"}
+              </div>
+              <div style={{
+                width: "100%", maxWidth: 40, height: Math.max(h, 4), borderRadius: "4px 4px 0 0",
+                background: v > 0 ? `linear-gradient(180deg, ${C.neonAmber}, ${C.neonAmber}60)` : `${C.border}60`,
+                transition: "height 0.4s ease",
+                boxShadow: v > 0 ? `0 0 8px ${C.neonAmber}30` : "none"
+              }} />
+              <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 500 }}>{labels[i]}</div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
 function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
   const [tab, setTab] = useState("metricas");
@@ -239,6 +332,11 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
               </GlassCard>
             </Fade>
           </div>
+
+          {/* Sales Chart */}
+          <Fade delay={300}>
+            <SalesChart pacientes={o.pacientesList || []} />
+          </Fade>
         </div>
       )}
 
