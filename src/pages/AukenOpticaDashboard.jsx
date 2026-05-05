@@ -341,7 +341,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
       )}
 
       {tab === "pacientes" && (
-        <Fade>
+        <div>
           <GlassCard style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Base de Datos CRM</div>
@@ -445,11 +445,11 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
               </table>
             </div>
           </GlassCard>
-        </Fade>
+        </div>
       )}
 
       {tab === "campanas" && (
-        <Fade>
+        <div>
           <GlassCard style={{ padding: "30px", borderTop: `2px solid ${C.neonAmber}` }}>
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 8 }}>Generador de Campañas Masivas 🚀</div>
@@ -487,7 +487,7 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal }) {
               </div>
             </div>
           </GlassCard>
-        </Fade>
+        </div>
       )}
     </div>
   );

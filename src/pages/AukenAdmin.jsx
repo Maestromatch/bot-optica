@@ -65,6 +65,13 @@ export default function AukenAdmin() {
     setNewOptica({ nombre: "", dueño: "", plan: "Mensual", sucursales: 1, telefono: "", ciudad: "", mensualidad: 89990 });
   };
 
+  const updatePlan = (id, newPlan) => {
+    const precios = { "Mensual": 89990, "Anual": 890000, "Multi-Sucursal": 250000 };
+    setOpticas(prev => prev.map(o => 
+      o.id === id ? { ...o, plan: newPlan, mensualidad: precios[newPlan] } : o
+    ));
+  };
+
   const totalMRR = opticas.filter(o => o.estado === "activo").reduce((s, o) => s + o.mensualidad, 0);
 
   if (!authed) {
@@ -150,7 +157,15 @@ export default function AukenAdmin() {
                     <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>{o.dueño} · {o.ciudad} · {o.sucursales} local{o.sucursales > 1 ? "es" : ""}</div>
                   </td>
                   <td style={{ padding: "16px 20px", fontSize: 13 }}>
-                    <span style={{ background: `${C.blue}20`, color: C.blue, padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{o.plan}</span>
+                    <select 
+                      value={o.plan} 
+                      onChange={(e) => updatePlan(o.id, e.target.value)}
+                      style={{ background: `${C.blue}20`, color: C.blue, border: "none", padding: "4px 8px", borderRadius: 8, fontSize: 11, fontWeight: 600, outline: "none", cursor: "pointer" }}
+                    >
+                      <option value="Mensual">Plan Mensual</option>
+                      <option value="Anual">Plan Anual</option>
+                      <option value="Multi-Sucursal">Multi-Sucursal</option>
+                    </select>
                   </td>
                   <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 700, color: C.green }}>
                     ${o.mensualidad.toLocaleString("es-CL")}
