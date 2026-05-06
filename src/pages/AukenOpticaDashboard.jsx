@@ -646,6 +646,7 @@ export default function AukenOpticaDashboard() {
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [vapiCallStatus, setVapiCallStatus] = useState("disconnected");
   const [vapiInstance, setVapiInstance] = useState(null);
+  const [patients, setPatients] = useState([]);
 
   useEffect(() => {
     try {
