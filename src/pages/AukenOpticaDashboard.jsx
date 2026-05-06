@@ -23,6 +23,11 @@ const C = {
 
 // ── CONFIGURACIÓN DE LA ÓPTICA PRINCIPAL ───────────────────────
 const MI_OPTICA = {
+  nombre: "Ópticas Ferreira",
+  ubicación: "Llay Llay, Chile",
+  admin: "Prima Ferreira",
+  logo: "👓",
+  color: "#0055FF", // Un azul profesional para Ferreira
   id: 1, 
   name: "Ópticas Glow Vision", 
   city: "Punitaqui",
@@ -451,6 +456,17 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                           </td>
                           <td style={{ padding: "16px 24px", display: "flex", gap: 12, alignItems: "center" }}>
                             <button 
+                              onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(p); }}
+                              style={{ padding: "6px", background: "rgba(37, 211, 102, 0.1)", border: "none", borderRadius: "6px", color: "#25D366", cursor: "pointer", transition: "all 0.2s" }}
+                              title="Enviar WhatsApp Automático"
+                              onMouseEnter={e => e.currentTarget.style.background = "rgba(37, 211, 102, 0.2)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "rgba(37, 211, 102, 0.1)"}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                              </svg>
+                            </button>
+                            <button 
                               onClick={(e) => { e.stopPropagation(); setEditingPatient({...p}); setSelectedPatient(p); }}
                               style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "8px", borderRadius: 8, cursor: "pointer", fontSize: 14 }}
                             >
@@ -668,6 +684,33 @@ export default function AukenOpticaDashboard() {
   const handleStopVapiCall = () => {
     if (vapiInstance) vapiInstance.stop();
   };
+
+  const handleSendWhatsApp = async (patient) => {
+    try {
+      const response = await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: patient.whatsapp || patient.telefono,
+          name: patient.nombre,
+          date: patient.fecha_cita || 'Próximamente',
+          type: 'welcome'
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Mensaje enviado a ${patient.nombre}`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      console.error('Error WhatsApp API:', err);
+      // Plan B: WhatsApp Web si la API no está lista
+      const msg = encodeURIComponent(`Hola ${patient.nombre}, bienvenido a Óptica GlowVision. Te contactamos para confirmar tu cita.`);
+      window.open(`https://wa.me/${patient.whatsapp || patient.telefono}?text=${msg}`, '_blank');
+    }
+  };
   const [showModal, setShowModal] = useState(false);
   const [newLead, setNewLead] = useState({ nombre: "", rut: "", telefono: "", comuna: "", notas: "", sucursal: "Central", recetaImgUrl: null, recetaData: null, estado_compra: "Pendiente", monto_venta: "", operativo: "" });
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -789,7 +832,15 @@ export default function AukenOpticaDashboard() {
             recetaData: p.receta_data || {},
             recetaImgUrl: p.receta_img_url || p.recetaImgUrl || null
           })).sort((a, b) => new Date(b.created_at || b.fecha_ultima_visita || 0) - new Date(a.created_at || a.fecha_ultima_visita || 0));
-          refreshStats(normalized);
+          
+          setPatients(normalized);
+          setOpticaData(prev => ({
+            ...prev,
+            pacientesList: normalized,
+            patients: normalized.length,
+            vigentes: normalized.length, // Por simplificar
+            proximasControl: normalized.filter(p => p.estado_compra === 'Pendiente').length
+          }));
         }
       } catch (err) {
         setErrorStatus("Error al cargar datos: " + err.message);

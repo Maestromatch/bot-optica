@@ -24,7 +24,8 @@ const SKILLS = [
   { id: 10, name: "Web Scrolling", icon: "🌐", category: "Análisis", description: "Análisis web con scrolling profundo para extraer datos y contenido completo.", triggers: ["analiza esta web", "scraping", "extraer datos web"], status: "active" },
   { id: 11, name: "Auditoría SEO Kit", icon: "📋", category: "Análisis", description: "Kit completo de auditoría SEO con herramientas avanzadas y reportes detallados.", triggers: ["kit SEO", "auditoría completa SEO"], status: "active" },
   { id: 12, name: "Kit N8N Avanzado", icon: "🔗", category: "Automatización", description: "Kit avanzado de automatización con patrones, validación y código personalizado.", triggers: ["n8n avanzado", "workflow complejo"], status: "active" },
-  { id: 13, name: "Ahorro de Tokens", icon: "💡", category: "Optimización", description: "13 reglas para optimizar el uso de tokens en Claude y Claude Code.", triggers: ["ahorrar tokens", "optimizar Claude"], status: "config" },
+  { id: 13, name: "WhatsApp GlowVision", icon: "💬", category: "Automatización", description: "Envío masivo y automatizado de mensajes vía Meta API. Maneja plantillas de bienvenida y recordatorios.", triggers: ["envía whatsapp", "notifica al paciente", "mensaje de bienvenida"], status: "active" },
+  { id: 14, name: "Ahorro de Tokens", icon: "💡", category: "Optimización", description: "13 reglas para optimizar el uso de tokens en Claude y Claude Code.", triggers: ["ahorrar tokens", "optimizar Claude"], status: "config" },
 ];
 
 const CATEGORIES = ["Todos", "Análisis", "Automatización", "Ventas", "Gestión", "Desarrollo", "Redes Sociales", "Optimización"];
