@@ -6,6 +6,7 @@ import AukenWidget          from "./pages/AukenWidget";
 import AukenOptica          from "./pages/AukenOptica";
 import AukenOpticaLanding   from "./pages/AukenOpticaLanding";
 import AukenOpticaDashboard from "./pages/AukenOpticaDashboard";
+import AukenPropuesta       from "./pages/AukenPropuesta";
 import AukenIntegrations    from "./pages/AukenIntegrations";
 import AukenLogin           from "./pages/AukenLogin";
 import AukenAdmin           from "./pages/AukenAdmin";
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/landing"           element={<AukenLanding />} />
         <Route path="/dashboard"         element={<AukenDashboard />} />
         <Route path="/widget"            element={<AukenWidget />} />
+        <Route path="/propuesta"         element={<AukenPropuesta />} />
         <Route path="/login"             element={<AukenLogin />} />
         
         {/* Protected Routes for the Optic */}
