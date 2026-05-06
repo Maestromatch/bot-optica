@@ -1078,7 +1078,7 @@ export default function AukenOpticaDashboard() {
                   )}
                 </div>
                 
-                {editingPatient.recetaData ? (
+                {editingPatient?.recetaData ? (
                   <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
                     <div style={{ color: C.textMuted, fontWeight: 700 }}></div>
                     <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Esfera</div>
@@ -1086,14 +1086,14 @@ export default function AukenOpticaDashboard() {
                     <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Eje</div>
                     
                     <div style={{ color: C.neonBlue, fontWeight: 700 }}>OD</div>
-                    <input value={editingPatient.recetaData.OD?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData.OD?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData.OD?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                     
                     <div style={{ color: C.neonBlue, fontWeight: 700 }}>OI</div>
-                    <input value={editingPatient.recetaData.OI?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData.OI?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData.OI?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                   </div>
                 ) : (
                   <div style={{ textAlign: "center", padding: "10px", color: C.textMuted, fontSize: 12, border: `1px dashed ${C.border}`, borderRadius: 6 }}>
