@@ -196,7 +196,7 @@ function SalesChart({ pacientes }) {
 }
 
 // ── DETALLE ÓPTICA ───────────────────────────────────────────────
-function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient, vapiCallStatus, handleStartVapiCall, handleStopVapiCall, setShowProfileModal }) {
+function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucursalFilter, setEditingPatient, setSelectedPatient, vapiCallStatus, handleStartVapiCall, handleStopVapiCall, setShowProfileModal, setEditingProfile }) {
   const [tab, setTab] = useState("metricas");
 
   const KPI = ({ label, value, color, sub, glow = false }) => (
@@ -449,17 +449,21 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
                               )}
                             </div>
                           </td>
-                          <td style={{ padding: "16px 24px" }}>
+                          <td style={{ padding: "16px 24px", display: "flex", gap: 12, alignItems: "center" }}>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setEditingPatient({...p}); setSelectedPatient(p); }}
+                              style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "8px", borderRadius: 8, cursor: "pointer", fontSize: 14 }}
+                            >
+                              ✏️
+                            </button>
                             <a 
                               href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reserva+Operativo+-+${encodeURIComponent(p.nombre || "")}&details=Teléfono:+${encodeURIComponent(p.telefono || "")}%0A%0A${encodeURIComponent(p.notas_clinicas || "")}`} 
                               target="_blank" 
                               rel="noreferrer"
                               onClick={e => e.stopPropagation()}
-                              style={{ background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}50`, padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = C.neonBlue; e.currentTarget.style.color = "#fff"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = `${C.neonBlue}20`; e.currentTarget.style.color = C.neonBlue; }}
+                              style={{ background: `${C.neonGreen}20`, color: C.neonGreen, border: `1px solid ${C.neonGreen}50`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
                             >
-                              📅 Google
+                              📅
                             </a>
                           </td>
                         </tr>
@@ -632,6 +636,16 @@ export default function AukenOpticaDashboard() {
       const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
       if (pubKey && typeof Vapi !== 'undefined') {
         const vapi = new Vapi(pubKey);
+        
+        vapi.on('call-start', () => setVapiCallStatus("connected"));
+        vapi.on('call-end', () => setVapiCallStatus("disconnected"));
+        vapi.on('speech-start', () => setVapiCallStatus("speaking"));
+        vapi.on('speech-end', () => setVapiCallStatus("connected"));
+        vapi.on('error', (e) => {
+          console.error(e);
+          setVapiCallStatus("disconnected");
+        });
+
         setVapiInstance(vapi);
       }
     } catch (err) {
@@ -783,6 +797,8 @@ export default function AukenOpticaDashboard() {
       setLoading(false);
     }
     fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -871,6 +887,7 @@ export default function AukenOpticaDashboard() {
               handleStartVapiCall={handleStartVapiCall}
               handleStopVapiCall={handleStopVapiCall}
               setShowProfileModal={setShowProfileModal}
+              setEditingProfile={setEditingProfile}
             />
           </Fade>
         )}
@@ -1128,17 +1145,21 @@ export default function AukenOpticaDashboard() {
 
                    <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => {
-                        const msg = `¡Hola ${editingPatient.nombre}! ✨ Bienvenido a Óptica Glow Vision. Es un placer saludarte.\n\nEstamos procesando tu orden. Te avisaremos apenas tus lentes estén listos para retiro. 👓`;
-                        window.open(`https://wa.me/${editingPatient.telefono.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+                        const tel = editingPatient?.telefono || "";
+                        const nombre = editingPatient?.nombre || "Paciente";
+                        const msg = `¡Hola ${nombre}! ✨ Bienvenido a Óptica Glow Vision. Es un placer saludarte.\n\nEstamos procesando tu orden. Te avisaremos apenas tus lentes estén listos para retiro. 👓`;
+                        window.open(`https://wa.me/${tel.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
                       }} style={{ flex: 1, background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}40`, padding: "10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                         👋 Saludo Bienvenida
                       </button>
                       
                       <button onClick={() => {
-                        const f = editingPatient.fecha_retiro || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-                        const s = editingPatient.sucursal_entrega || o.city;
-                        const msg = `¡Hola ${editingPatient.nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido confirmada.\n\n📅 Fecha estimada de retiro: ${f.split('-').reverse().join('/')}\n👓 Monto pagado: $${editingPatient.monto_venta || '0'}\n📍 Lugar: ${s}\n\nPresenta este mensaje al retirar. ¡Nos vemos!`;
-                        window.open(`https://wa.me/${editingPatient.telefono.replace(/\+/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+                        const tel = editingPatient?.telefono || "";
+                        const nombre = editingPatient?.nombre || "Paciente";
+                        const f = editingPatient?.fecha_retiro || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+                        const s = editingPatient?.sucursal_entrega || o?.city || "Sucursal";
+                        const msg = `¡Hola ${nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido confirmada.\n\n📅 Fecha estimada de retiro: ${f.split('-').reverse().join('/')}\n👓 Monto pagado: $${editingPatient?.monto_venta || '0'}\n📍 Lugar: ${s}\n\nPresenta este mensaje al retirar. ¡Nos vemos!`;
+                        window.open(`https://wa.me/${tel.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
                       }} style={{ flex: 2, background: "#25D366", color: "#fff", border: "none", padding: "10px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                         <span>📱</span> Enviar Ticket WhatsApp
                       </button>
@@ -1157,16 +1178,16 @@ export default function AukenOpticaDashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Nombre Comercial</label>
-                <input value={editingProfile.name} onChange={e => setEditingProfile({...editingProfile, name: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                <input value={editingProfile?.name || ""} onChange={e => setEditingProfile({...editingProfile, name: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Ubicación Principal</label>
-                <input value={editingProfile.city} onChange={e => setEditingProfile({...editingProfile, city: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                <input value={editingProfile?.city || ""} onChange={e => setEditingProfile({...editingProfile, city: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 11, color: C.textDim, textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>Teléfono Contacto</label>
-                  <input value={editingProfile.phone} onChange={e => setEditingProfile({...editingProfile, phone: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
+                  <input value={editingProfile?.phone || ""} onChange={e => setEditingProfile({...editingProfile, phone: e.target.value})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 12, borderRadius: 8, outline: "none" }} />
                 </div>
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 10 }}>

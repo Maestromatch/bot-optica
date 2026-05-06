@@ -53,55 +53,67 @@ export default async function handler(req, res) {
     }
 
     // 2. Ejecución de Herramientas (Function Calling)
-    if (message && message.type === 'function-call') {
-      const { functionCall, toolCallId } = message;
-      const { name, args } = functionCall;
-      
-      if (name === 'agendar_cita' || name === 'agendar_citas') {
-        const { nombre, rut, fecha, objetivo } = args;
-        console.log(`Intentando agendar para: ${nombre} | RUT: ${rut} | Fecha: ${fecha}`);
+    if (message && (message.type === 'function-call' || message.type === 'tool-calls')) {
+      const toolCalls = message.toolCalls || [message.functionCall];
+      const results = [];
+
+      for (const toolCall of toolCalls) {
+        if (!toolCall) continue;
         
-        if (!nombre || !rut || !fecha) {
-          console.error("Faltan argumentos requeridos para agendar_cita");
-          return res.status(200).json({
-            results: [{
+        const name = toolCall.name || toolCall.function?.name;
+        const toolCallId = toolCall.toolCallId || toolCall.id;
+        let args = toolCall.args || toolCall.function?.arguments;
+        
+        if (typeof args === 'string') {
+          try { args = JSON.parse(args); } catch(e) { console.error("Error parsing args:", e); }
+        }
+
+        if (name === 'agendar_cita' || name === 'agendar_citas') {
+          const { nombre, rut, fecha, objetivo } = args;
+          console.log(`Intentando agendar para: ${nombre} | RUT: ${rut} | Fecha: ${fecha}`);
+          
+          if (!nombre || !rut || !fecha) {
+            results.push({
               toolCallId: toolCallId,
               result: "Me faltan algunos datos (nombre, rut o fecha) para completar la agenda. ¿Me los podrías repetir?"
-            }]
-          });
-        }
-        const { error: citaError } = await supabase.from('citas').insert([{
-          nombre,
-          rut,
-          fecha_hora: fecha,
-          objetivo: objetivo || "Consulta General",
-          canal: "Voz (Vapi)"
-        }]);
+            });
+            continue;
+          }
 
-        if (citaError) {
-          console.error("Error al agendar cita:", citaError);
-          return res.status(200).json({
-            results: [{
+          const { error: citaError } = await supabase.from('citas').insert([{
+            nombre,
+            rut,
+            fecha_hora: fecha,
+            objetivo: objetivo || "Consulta General",
+            canal: "Voz (Vapi)"
+          }]);
+
+          if (citaError) {
+            console.error("Error al agendar cita:", citaError);
+            results.push({
               toolCallId: toolCallId,
               result: "Hubo un problema técnico al acceder a la agenda, pero he tomado nota de tus datos y un humano te confirmará pronto."
-            }]
-          });
-        }
+            });
+            continue;
+          }
 
-        // También podemos asegurar que el paciente existe o actualizar su ficha
-        await supabase.from('pacientes').upsert({
-          nombre,
-          rut,
-          notas_clinicas: `Cita agendada por Voz para el ${fecha}. Objetivo: ${objetivo}`,
-          fecha_ultima_visita: new Date().toISOString().split('T')[0]
-        }, { onConflict: 'rut' });
+          // Asegurar que el paciente existe o actualizar su ficha
+          await supabase.from('pacientes').upsert({
+            nombre,
+            rut,
+            notas_clinicas: `Cita agendada por Voz para el ${fecha}. Objetivo: ${objetivo}`,
+            fecha_ultima_visita: new Date().toISOString().split('T')[0]
+          }, { onConflict: 'rut' });
 
-        return res.status(200).json({
-          results: [{
+          results.push({
             toolCallId: toolCallId,
             result: `¡Perfecto! La cita ha sido agendada exitosamente para el ${fecha}. Te esperamos en Caupolicán #763.`
-          }]
-        });
+          });
+        }
+      }
+
+      if (results.length > 0) {
+        return res.status(200).json({ results });
       }
     }
 
