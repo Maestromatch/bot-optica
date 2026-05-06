@@ -1193,7 +1193,7 @@ export default function AukenOpticaDashboard() {
                       <button onClick={() => {
                         const tel = editingPatient?.telefono || "";
                         const nombre = editingPatient?.nombre || "Paciente";
-                        const msg = `¡Hola ${nombre}! ✨ Bienvenido a Óptica Glow Vision. Es un placer saludarte.\n\nEstamos procesando tu orden. Te avisaremos apenas tus lentes estén listos para retiro. 👓`;
+                        const msg = `¡Hola ${nombre}! ✨ Bienvenido a ${o.name}. Es un placer saludarte.\n\nEstamos procesando tu orden. Te avisaremos apenas tus lentes estén listos para retiro. 👓`;
                         window.open(`https://wa.me/${tel.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
                       }} style={{ flex: 1, background: `${C.neonBlue}20`, color: C.neonBlue, border: `1px solid ${C.neonBlue}40`, padding: "10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                         👋 Saludo Bienvenida
@@ -1204,7 +1204,7 @@ export default function AukenOpticaDashboard() {
                         const nombre = editingPatient?.nombre || "Paciente";
                         const f = editingPatient?.fecha_retiro || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
                         const s = editingPatient?.sucursal_entrega || o?.city || "Sucursal";
-                        const msg = `¡Hola ${nombre}! 🎫 Tu orden en Óptica Glow Vision ha sido confirmada.\n\n📅 Fecha estimada de retiro: ${f.split('-').reverse().join('/')}\n👓 Monto pagado: $${editingPatient?.monto_venta || '0'}\n📍 Lugar: ${s}\n\nPresenta este mensaje al retirar. ¡Nos vemos!`;
+                        const msg = `¡Hola ${nombre}! 🎫 Tu orden en ${o.name} ha sido confirmada.\n\n📅 Fecha estimada de retiro: ${f.split('-').reverse().join('/')}\n👓 Monto pagado: $${editingPatient?.monto_venta || '0'}\n📍 Lugar: ${s}\n\nPresenta este mensaje al retirar. ¡Nos vemos!`;
                         window.open(`https://wa.me/${tel.replace(/\+/g, "").replace(/\s/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
                       }} style={{ flex: 2, background: "#25D366", color: "#fff", border: "none", padding: "10px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                         <span>📱</span> Enviar Ticket WhatsApp
