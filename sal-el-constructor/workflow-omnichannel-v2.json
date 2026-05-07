@@ -1,0 +1,103 @@
+{
+  "name": "Saul el Constructor - Omnicanal V2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-capture",
+        "options": {}
+      },
+      "name": "Webhook Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{$node[\"Google Drive Trigger\"].json[\"webViewLink\"]}}"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Instagram Post (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "postVideo",
+        "text": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}}",
+        "videoUrl": "={{$node[\"Google Drive Trigger\"].json[\"webViewLink\"]}}"
+      },
+      "name": "TikTok Post",
+      "type": "n8n-nodes-base.tiktok",
+      "typeVersion": 1,
+      "position": [
+        400,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Instagram Post (API)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

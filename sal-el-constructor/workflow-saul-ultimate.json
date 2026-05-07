@@ -1,0 +1,143 @@
+{
+  "name": "Saul el Constructor - ULTIMATE FLOW",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Google Drive Trigger\"].json[\"fileExtension\"]}}",
+              "operation": "contains",
+              "value2": "mp4"
+            }
+          ]
+        }
+      },
+      "name": "Es Video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        350,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{$node[\"Google Drive Trigger\"].json[\"id\"]}}"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Publicar Foto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{$node[\"Google Drive Trigger\"].json[\"id\"]}}"
+            },
+            {
+              "name": "media_type",
+              "value": "VIDEO"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Procesar Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Es Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Video?": {
+      "main": [
+        [
+          {
+            "node": "Procesar Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Publicar Foto",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  }
+}

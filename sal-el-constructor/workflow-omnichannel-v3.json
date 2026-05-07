@@ -1,0 +1,133 @@
+{
+  "name": "Saul el Constructor - OMNICHANNEL V3 (IG+TT)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-3.5-turbo\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres el community manager de Saúl el Constructor. Crea un copy viral para TikTok e Instagram basado en: {{$node[\\\"Google Drive Trigger\\\"].json[\\\"name\\\"]}}. Usa hashtags como #Santiago #MaestroSaul #Construccion.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Generar Copy Viral",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        300,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{$node[\\\"Google Drive Trigger\\\"].json[\\\"id\\\"]}}"
+            },
+            {
+              "name": "media_type",
+              "value": "VIDEO"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\\\"Generar Copy Viral\\\"].json[\\\"choices\\\"][0][\\\"message\\\"][\\\"content\\\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Publicar en Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_TIKTOK_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post_info\": {\n    \"title\": \"{{$node[\\\"Generar Copy Viral\\\"].json[\\\"choices\\\"][0][\\\"message\\\"][\\\"content\\\"]}}\",\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\"\n  },\n  \"source_info\": {\n    \"source\": \"PULL_FROM_URL\",\n    \"video_url\": \"https://drive.google.com/uc?export=download&id={{$node[\\\"Google Drive Trigger\\\"].json[\\\"id\\\"]}}\"\n  }\n}",
+        "options": {}
+      },
+      "name": "Publicar en TikTok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generar Copy Viral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Copy Viral": {
+      "main": [
+        [
+          {
+            "node": "Publicar en Instagram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Publicar en TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

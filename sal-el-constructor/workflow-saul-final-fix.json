@@ -1,0 +1,70 @@
+{
+  "name": "Saul el Constructor - FINAL FIX",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{$node[\"Google Drive Trigger\"].json[\"webViewLink\"]}}"
+            },
+            {
+              "name": "caption",
+              "value": "Mira cómo trabajamos en Saúl el Constructor 🏗️ #Santiago #SIP #Construccion"
+            },
+            {
+              "name": "access_token",
+              "value": "PEGA_AQUI_TU_TOKEN_LARGO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Instagram Post (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Instagram Post (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

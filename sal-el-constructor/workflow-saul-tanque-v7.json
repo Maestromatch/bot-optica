@@ -1,0 +1,365 @@
+{
+  "name": "Saul el Constructor - PUBLICADOR TANQUE V7 (Full Carruseles + IA)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "changesInvolvingASpecificFolder",
+        "folder": {
+          "__rl": true,
+          "value": "1iRvGzwhSwk9qtXaxvfuF-Xc_ZwWq6yUb",
+          "mode": "list",
+          "cachedResultName": "fotos"
+        },
+        "watchFor": "fileCreated"
+      },
+      "id": "e4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Trigger Fotos",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [400, 500]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "changesInvolvingASpecificFolder",
+        "folder": {
+          "__rl": true,
+          "value": "1OHEIQu83uTy8tG2piD33JlTTTS3uKESh",
+          "mode": "list",
+          "cachedResultName": "Videos"
+        },
+        "watchFor": "fileCreated"
+      },
+      "id": "f4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Trigger Videos",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [400, 650]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "changesInvolvingASpecificFolder",
+        "folder": {
+          "__rl": true,
+          "value": "1YUlZWrFhbiltg0Ly4YAjzlbkZhimoA9z",
+          "mode": "list",
+          "cachedResultName": "CARRUSELES"
+        },
+        "watchFor": "fileCreated"
+      },
+      "id": "g4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Trigger Carruseles",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [400, 350]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "h4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Repetidor (Uno por uno)1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [700, 500]
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "messages": {
+          "item": [
+            {
+              "role": "system",
+              "content": "Eres un experto en marketing inmobiliario para Saúl el Constructor. Crea un caption de Instagram profesional y persuasivo."
+            },
+            {
+              "role": "user",
+              "content": "=Proyecto: {{ $json.name }}\nCrea un copy con emojis y hashtags técnicos."
+            }
+          ]
+        }
+      },
+      "id": "i4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "IA de Agencia (Hooks)1",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Trigger Carruseles').isExecuted ? 'true' : 'false' }}",
+              "operation": "equal",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "j4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Es Carrusel?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1100, 500]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "k4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Espera Anti-Bloqueo1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1800, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media_publish",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDHzrikqYBRV1Sz2qMedyCVNBaHsNFWtHutSoncs6qEjeTZB8aMDokj28EddjW"
+            },
+            {
+              "name": "creation_id",
+              "value": "={{ $('Procesar Video2').isExecuted ? $('Procesar Video2').item.json.id : $('Procesar Foto2').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "id": "l4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "BOTÓN PUBLICAR2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDHzrikqYBRV1Sz2qMedyCVNBaHsNFWtHutSoncs6qEjeTZB8aMDokj28EddjW"
+            },
+            {
+              "name": "image_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{ $('Repetidor (Uno por uno)1').item.json.id }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('IA de Agencia (Hooks)1').item.json.choices[0].message.content }}"
+            }
+          ]
+        }
+      },
+      "id": "m4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Procesar Foto2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1500, 650]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDHzrikqYBRV1Sz2qMedyCVNBaHsNFWtHutSoncs6qEjeTZB8aMDokj28EddjW"
+            },
+            {
+              "name": "video_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{ $('Repetidor (Uno por uno)1').item.json.id }}"
+            },
+            {
+              "name": "media_type",
+              "value": "VIDEO"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('IA de Agencia (Hooks)1').item.json.choices[0].message.content }}"
+            }
+          ]
+        }
+      },
+      "id": "n4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Procesar Video2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1500, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Trigger Videos').isExecuted ? 'true' : 'false' }}",
+              "operation": "equal",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "o4a2d8e1-7e1e-4b1e-9e1e-7e1e4b1e9e1e",
+      "name": "Es Video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1300, 550]
+    }
+  ],
+  "connections": {
+    "Trigger Fotos": {
+      "main": [
+        [
+          {
+            "node": "Repetidor (Uno por uno)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Videos": {
+      "main": [
+        [
+          {
+            "node": "Repetidor (Uno por uno)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Carruseles": {
+      "main": [
+        [
+          {
+            "node": "Repetidor (Uno por uno)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repetidor (Uno por uno)1": {
+      "main": [
+        [
+          {
+            "node": "IA de Agencia (Hooks)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA de Agencia (Hooks)1": {
+      "main": [
+        [
+          {
+            "node": "Es Carrusel?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Carrusel?": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Es Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Video?": {
+      "main": [
+        [
+          {
+            "node": "Procesar Video2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Procesar Foto2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Video2": {
+      "main": [
+        [
+          {
+            "node": "Espera Anti-Bloqueo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Foto2": {
+      "main": [
+        [
+          {
+            "node": "Espera Anti-Bloqueo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera Anti-Bloqueo1": {
+      "main": [
+        [
+          {
+            "node": "BOTÓN PUBLICAR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

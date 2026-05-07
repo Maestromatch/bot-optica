@@ -1,0 +1,279 @@
+{
+  "name": "Saul el Constructor - PUBLICADOR TANQUE V4",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger1",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Repetidor (Uno por uno)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        250,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-3.5-turbo\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres una agencia de marketing de élite para constructoras. Tu especialidad son los 'Hooks' (ganchos) que detienen el scroll. Tu tono es de autoridad técnica, premium y directo.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Crea un post para Instagram basado en este archivo: {{$node[\\\"Repetidor (Uno por uno)\\\"].json[\\\"name\\\"]}}. Estructura: 1. Hook impactante. 2. Valor técnico (SIP, calidad, plazos). 3. CTA (Llamada a la acción al WhatsApp). 4. Hashtags estratégicos.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "IA de Agencia (Hooks)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Repetidor (Uno por uno)\"].json[\"fileExtension\"]}}",
+              "operation": "contains",
+              "value2": "mp4"
+            }
+          ]
+        }
+      },
+      "name": "Detectar Video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        750,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{$node[\"Repetidor (Uno por uno)\"].json[\"id\"]}}"
+            },
+            {
+              "name": "media_type",
+              "value": "VIDEO"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\"IA de Agencia (Hooks)\"].json[\"choices\"][0][\"message\"][\"content\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Procesar Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{$node[\"Repetidor (Uno por uno)\"].json[\"id\"]}}"
+            },
+            {
+              "name": "caption",
+              "value": "={{$node[\"IA de Agencia (Hooks)\"].json[\"choices\"][0][\"message\"][\"content\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Procesar Foto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1000,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/17841444240694094/media_publish",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{$node[\"Procesar Video\"].json[\"id\"] || $node[\"Procesar Foto\"].json[\"id\"]}}"
+            },
+            {
+              "name": "access_token",
+              "value": "TU_TOKEN_AQUI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "BOTÓN PUBLICAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1300,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "name": "Espera Anti-Bloqueo",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1550,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Repetidor (Uno por uno)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repetidor (Uno por uno)": {
+      "main": [
+        [
+          {
+            "node": "IA de Agencia (Hooks)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA de Agencia (Hooks)": {
+      "main": [
+        [
+          {
+            "node": "Detectar Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Video?": {
+      "main": [
+        [
+          {
+            "node": "Procesar Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Procesar Foto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Video": {
+      "main": [
+        [
+          {
+            "node": "BOTÓN PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Foto": {
+      "main": [
+        [
+          {
+            "node": "BOTÓN PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BOTÓN PUBLICAR": {
+      "main": [
+        [
+          {
+            "node": "Espera Anti-Bloqueo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera Anti-Bloqueo": {
+      "main": [
+        [
+          {
+            "node": "Repetidor (Uno por uno)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

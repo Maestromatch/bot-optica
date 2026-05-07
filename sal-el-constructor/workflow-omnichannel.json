@@ -1,0 +1,131 @@
+{
+  "name": "Saul el Constructor - Omnicanal",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-capture",
+        "options": {}
+      },
+      "name": "Webhook Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "TU_GOOGLE_SHEET_ID",
+        "range": "A:C",
+        "options": {}
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "folderId": "TU_FOLDER_DRIVE_ID",
+        "event": "fileCreated",
+        "options": {}
+      },
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "publish",
+        "igUserId": "17841444240694094",
+        "caption": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}} #Santiago #Construccion",
+        "imageUrl": "={{$node[\"Google Drive Trigger\"].json[\"webViewLink\"]}}"
+      },
+      "name": "Instagram Post",
+      "type": "n8n-nodes-base.instagram",
+      "typeVersion": 1,
+      "position": [
+        400,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "postVideo",
+        "text": "={{$node[\"Google Drive Trigger\"].json[\"name\"]}}",
+        "videoUrl": "={{$node[\"Google Drive Trigger\"].json[\"webViewLink\"]}}"
+      },
+      "name": "TikTok Post",
+      "type": "n8n-nodes-base.tiktok",
+      "typeVersion": 1,
+      "position": [
+        400,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Webhook Lead\"].json[\"phone\"]}}",
+        "text": "=¡Hola! 👋 Soy el asistente de Saúl el Constructor. He recibido tu interés en {{$node[\"Webhook Lead\"].json[\"servicio\"]}}. \n\nPara darte un presupuesto exacto, ¿en qué comuna se realizaría la obra? (Ej: Las Condes, Valdivia, etc.)"
+      },
+      "name": "WhatsApp Bot Response",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Lead": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Bot Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Instagram Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

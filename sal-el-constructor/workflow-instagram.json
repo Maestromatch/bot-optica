@@ -1,0 +1,91 @@
+{
+  "name": "Instagram Auto-Poster @sal_el_constructor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "e4f8d2b1-6a7c-4e8d-9a0b-1c2d3e4f5g6h",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "message": [
+            {
+              "role": "system",
+              "content": "Eres el creador de contenido de @sal_el_constructor. Tu objetivo es generar posts para Instagram que vendan servicios de construcción. Usa la estrategia: Hook + Valor + Prueba Social + CTA. Pilares: Terrenos, Urbano, Industrial."
+            },
+            {
+              "role": "user",
+              "content": "Genera un post para el pilar de hoy. Rotación diaria."
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "name": "AI Content Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "upload",
+        "instagramAccountId": "TU_INSTAGRAM_ACCOUNT_ID",
+        "caption": "={{$json.message.content}}",
+        "mediaUrl": "URL_DE_IMAGEN_DE_OBRA"
+      },
+      "id": "z9y8x7w6-v5u4-t3s2-r1q0-p9o8n7m6l5k4",
+      "name": "Instagram Business",
+      "type": "n8n-nodes-base.instagram",
+      "typeVersion": 1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Instagram Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "hash": "abc123def456",
+  "id": "1",
+  "meta": {
+    "instanceId": "local"
+  }
+}

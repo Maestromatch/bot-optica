@@ -1,0 +1,77 @@
+{
+  "name": "Saul el Constructor - LEAD QUALIFIER AI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "constructor-saul-lead",
+        "options": {}
+      },
+      "name": "Webhook Landing Page",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres el filtro de ventas experto de 'Saúl el Constructor'. Tu objetivo es ahorrarle tiempo a Saúl extrayendo la máxima información posible. Debes preguntar amablemente pero con firmeza:\\n1. Ubicación exacta (Comuna y Sector).\\n2. Tipo de Propiedad: ¿Es casa o departamento? ¿Tienen el terreno o es ampliación?\\n3. Magnitud: ¿Cuántos m2 aproximados tienen en mente?\\n4. Presupuesto: ¿Tienen un rango estimado de inversión? (Indícales que esto ayuda a darles la solución técnica correcta).\\n5. Plazos: ¿Para cuándo necesitan iniciar la obra?\\nSé profesional, directo y usa autoridad técnica. Si el cliente no tiene presupuesto o terreno, indícales que podemos darles asesoría comercial inicial.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Nuevo lead recibido: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"nombre\\\"]}} - Mensaje: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"mensaje\\\"]}}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "IA Calificadora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        350,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.evolution-api.com/instance/saul/message/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{$node[\\\"Webhook Landing Page\\\"].json[\\\"telefono\\\"]}}\",\n  \"text\": \"{{$node[\\\"IA Calificadora\\\"].json[\\\"choices\\\"][0][\\\"message\\\"][\\\"content\\\"]}}\"\n}",
+        "options": {}
+      },
+      "name": "Enviar WhatsApp Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Landing Page": {
+      "main": [
+        [
+          {
+            "node": "IA Calificadora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA Calificadora": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

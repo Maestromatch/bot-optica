@@ -635,6 +635,20 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
 // ── ROOT ─────────────────────────────────────────────────────────
 export default function AukenOpticaDashboard() {
   const navigate = useNavigate();
+  // --- SEO & OPTIMIZACIÓN (Deep Knowledge) ---
+  useEffect(() => {
+    document.title = `Monitor Inteligente | ${opticaData.name}`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", `Panel de control avanzado para ${opticaData.name} en ${opticaData.city}. Gestión de pacientes e IA Claudia.`);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = `Panel de control avanzado para ${opticaData.name} en ${opticaData.city}. Gestión de pacientes e IA Claudia.`;
+      document.head.appendChild(meta);
+    }
+  }, [opticaData]);
+
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState(null);
   const [opticaData, setOpticaData] = useState(MI_OPTICA);
@@ -642,11 +656,24 @@ export default function AukenOpticaDashboard() {
   const [vapiInstance, setVapiInstance] = useState(null);
   const [patients, setPatients] = useState([]);
 
+  // --- SEO & OPTIMIZACIÓN (Deep Knowledge) ---
+  useEffect(() => {
+    document.title = `Monitor Inteligente | ${opticaData.name} - Llay Llay`;
+    const meta = document.querySelector('meta[name="description"]') || document.createElement('meta');
+    meta.name = "description";
+    meta.content = `Panel avanzado de gestión para ${opticaData.name}. Control de pacientes, recetas y asistente IA Claudia en Llay Llay. Sistema optimizado para alto tráfico.`;
+    if (!document.querySelector('meta[name="description"]')) {
+      document.head.appendChild(meta);
+    }
+  }, [opticaData.name]);
+
   useEffect(() => {
     try {
       const pubKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
       if (pubKey && typeof Vapi !== 'undefined') {
-        const vapi = new Vapi(pubKey);
+        // Configuramos Vapi sin botón flotante para no estorbar el Monitor
+        const vapi = new Vapi(pubKey); 
+        // Nota: Si Vapi inyecta un botón por defecto, lo ocultaremos por CSS si es necesario.
         
         vapi.on('call-start', () => setVapiCallStatus("connected"));
         vapi.on('call-end', () => setVapiCallStatus("disconnected"));
@@ -1086,14 +1113,32 @@ export default function AukenOpticaDashboard() {
                     <div style={{ color: C.textMuted, fontWeight: 700, textAlign: "center" }}>Eje</div>
                     
                     <div style={{ color: C.neonBlue, fontWeight: 700 }}>OD</div>
-                    <input value={editingPatient.recetaData?.OD?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData?.OD?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData?.OD?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OD: {...editingPatient.recetaData.OD, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.esfera || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OD: {...(rd.OD || {}), esfera: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.cilindro || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OD: {...(rd.OD || {}), cilindro: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OD?.eje || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OD: {...(rd.OD || {}), eje: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                     
                     <div style={{ color: C.neonBlue, fontWeight: 700 }}>OI</div>
-                    <input value={editingPatient.recetaData?.OI?.esfera || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, esfera: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData?.OI?.cilindro || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, cilindro: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
-                    <input value={editingPatient.recetaData?.OI?.eje || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, OI: {...editingPatient.recetaData.OI, eje: e.target.value}}})} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.esfera || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OI: {...(rd.OI || {}), esfera: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.cilindro || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OI: {...(rd.OI || {}), cilindro: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
+                    <input value={editingPatient.recetaData?.OI?.eje || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || { OD: {}, OI: {} };
+                      setEditingPatient({...editingPatient, recetaData: {...rd, OI: {...(rd.OI || {}), eje: e.target.value}}});
+                    }} style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, textAlign: "center", outline: "none" }} />
                   </div>
                 ) : (
                   <div style={{ textAlign: "center", padding: "10px", color: C.textMuted, fontSize: 12, border: `1px dashed ${C.border}`, borderRadius: 6 }}>
@@ -1103,15 +1148,24 @@ export default function AukenOpticaDashboard() {
                 <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ fontSize: 10, color: C.textMuted }}>ADD</label>
-                    <input value={editingPatient.recetaData?.adicion || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, adicion: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    <input value={editingPatient.recetaData?.adicion || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || {};
+                      setEditingPatient({...editingPatient, recetaData: {...rd, adicion: e.target.value}});
+                    }} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ fontSize: 10, color: C.textMuted }}>DP</label>
-                    <input value={editingPatient.recetaData?.dp || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, dp: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    <input value={editingPatient.recetaData?.dp || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || {};
+                      setEditingPatient({...editingPatient, recetaData: {...rd, dp: e.target.value}});
+                    }} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ fontSize: 10, color: C.textMuted }}>Fecha</label>
-                    <input value={editingPatient.recetaData?.fecha || ""} onChange={e => setEditingPatient({...editingPatient, recetaData: {...editingPatient.recetaData, fecha: e.target.value}})} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
+                    <input value={editingPatient.recetaData?.fecha || ""} onChange={e => {
+                      const rd = editingPatient.recetaData || {};
+                      setEditingPatient({...editingPatient, recetaData: {...rd, fecha: e.target.value}});
+                    }} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: 6, borderRadius: 4, outline: "none", fontSize: 12 }} />
                   </div>
                 </div>
               </div>
