@@ -635,37 +635,26 @@ function OpticaDetail({ optica: o, setOpticaData, showModal, setShowModal, sucur
 // ── ROOT ─────────────────────────────────────────────────────────
 export default function AukenOpticaDashboard() {
   const navigate = useNavigate();
-  // --- SEO & OPTIMIZACIÓN (Deep Knowledge) ---
-  useEffect(() => {
-    document.title = `Monitor Inteligente | ${opticaData.name}`;
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute("content", `Panel de control avanzado para ${opticaData.name} en ${opticaData.city}. Gestión de pacientes e IA Claudia.`);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = "description";
-      meta.content = `Panel de control avanzado para ${opticaData.name} en ${opticaData.city}. Gestión de pacientes e IA Claudia.`;
-      document.head.appendChild(meta);
-    }
-  }, [opticaData]);
-
+  const [opticaData, setOpticaData] = useState(() => {
+    const saved = localStorage.getItem("auken_config");
+    return saved ? JSON.parse(saved) : MI_OPTICA;
+  });
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState(null);
-  const [opticaData, setOpticaData] = useState(MI_OPTICA);
   const [vapiCallStatus, setVapiCallStatus] = useState("disconnected");
   const [vapiInstance, setVapiInstance] = useState(null);
   const [patients, setPatients] = useState([]);
 
-  // --- SEO & OPTIMIZACIÓN (Deep Knowledge) ---
+  // --- PERSISTENCIA DE CONFIGURACIÓN (White-Label) ---
   useEffect(() => {
-    document.title = `Monitor Inteligente | ${opticaData.name} - Llay Llay`;
+    localStorage.setItem("auken_config", JSON.stringify(opticaData));
+    document.title = `Monitor Inteligente | ${opticaData.name} - ${opticaData.city}`;
+    
     const meta = document.querySelector('meta[name="description"]') || document.createElement('meta');
     meta.name = "description";
-    meta.content = `Panel avanzado de gestión para ${opticaData.name}. Control de pacientes, recetas y asistente IA Claudia en Llay Llay. Sistema optimizado para alto tráfico.`;
-    if (!document.querySelector('meta[name="description"]')) {
-      document.head.appendChild(meta);
-    }
-  }, [opticaData.name]);
+    meta.content = `Panel avanzado para ${opticaData.name}. Gestión de pacientes e IA en ${opticaData.city}.`;
+    if (!document.querySelector('meta[name="description"]')) document.head.appendChild(meta);
+  }, [opticaData]);
 
   useEffect(() => {
     try {
@@ -729,7 +718,7 @@ export default function AukenOpticaDashboard() {
     } catch (err) {
       console.error('Error WhatsApp API:', err);
       // Plan B: WhatsApp Web si la API no está lista
-      const msg = encodeURIComponent(`Hola ${patient.nombre}, bienvenido a Óptica GlowVision. Te contactamos para confirmar tu cita.`);
+      const msg = encodeURIComponent(`Hola ${patient.nombre}, bienvenido a ${opticaData.name}. Te contactamos para confirmar tu cita.`);
       window.open(`https://wa.me/${patient.whatsapp || patient.telefono}?text=${msg}`, '_blank');
     }
   };

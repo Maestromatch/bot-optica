@@ -57,7 +57,7 @@ const C = {
 // ─────────────────────────────────────────────────────────────────
 // SYSTEM PROMPT PARA CLAUDE
 // ─────────────────────────────────────────────────────────────────
-const buildSystemPrompt = (patient) => {
+const buildSystemPrompt = (patient, opticaName = "Aukén") => {
   const p = patient;
   const hasPatient = !!p;
   const recetaVencida = p?.estado === "vencida";
@@ -87,8 +87,8 @@ ${p.receta.adicion ? `- Adición: ${p.receta.adicion}` : ""}
     ? `INSTRUCCIÓN: El control de este paciente se aproxima (${p?.nextControl}). Menciona que se acerca la fecha de su próximo control.`
     : "";
 
-  return `Eres "Aukén", el asistente virtual de Óptica Glow Vision.
-
+  return `Eres "Aukén", el asistente virtual de ${opticaName}.
+  
 Personalidad: Cálido, preciso y confiable. Hablas de forma persuasiva.
 
 Servicios disponibles:
@@ -97,8 +97,8 @@ Servicios disponibles:
 - Lentes multifocales progresivos desde: $180.000
 
 Horarios: Lunes a Viernes 11:30–18:30
-Dirección: Caupolicán #763, Punitaqui
-WhatsApp: +56 9 5493 2802
+Dirección: Gestión centralizada por Aukén.
+WhatsApp: Contacto directo desde el monitor.
 
 ${fichaSection}
 ${alertSection}
@@ -494,10 +494,10 @@ function PanelFichas({ onSelectPatient, activePatient }) {
 // ─────────────────────────────────────────────────────────────────
 // CHAT PRINCIPAL
 // ─────────────────────────────────────────────────────────────────
-function Chat({ activePatient, allPatients = [] }) {
+function Chat({ activePatient, allPatients = [], opticaName = "Aukén" }) {
   const WELCOME = activePatient
-    ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a Óptica Glow Vision. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
-    : "¡Hola! Soy Aukén, el asistente de Óptica Glow Vision. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?";
+    ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a ${opticaName}. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
+    : `¡Hola! Soy Aukén, el asistente de ${opticaName}. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?`;
 
   const [messages, setMessages] = useState([mkMsg("assistant", WELCOME)]);
   const [loading, setLoading] = useState(false);
@@ -567,7 +567,7 @@ function Chat({ activePatient, allPatients = [] }) {
         body: JSON.stringify({
           model: "claude-3-haiku-20240307",
           max_tokens: 1000,
-          system: buildSystemPrompt(detectedPatient || activePatient || null),
+          system: buildSystemPrompt(detectedPatient || activePatient || null, opticaName),
           messages: history,
         }),
       });
@@ -675,6 +675,10 @@ function Chat({ activePatient, allPatients = [] }) {
 // ROOT — layout split panel
 // ─────────────────────────────────────────────────────────────────
 export default function AukenOptica() {
+  const [opticaData, setOpticaData] = useState(() => {
+    const saved = localStorage.getItem("auken_config");
+    return saved ? JSON.parse(saved) : { name: "Aukén", city: "Chile" };
+  });
   const [activePatient, setActivePatient] = useState(null);
   const [view, setView] = useState("split"); // split | chat | fichas
   const [allPatients, setAllPatients] = useState([]);
@@ -705,7 +709,7 @@ export default function AukenOptica() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 28, height: 28, background: C.blue, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👁️</div>
           <div>
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: C.ink }}>Óptica Glow Vision</span>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: C.ink }}>{opticaData.name}</span>
             <span style={{ color: C.border, margin: "0 8px" }}>·</span>
             <span style={{ fontSize: 15, color: C.amber, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>[MODO MONITOR]</span>
           </div>
@@ -751,7 +755,7 @@ export default function AukenOptica() {
         {/* Chat */}
         {(view === "split" || view === "chat") && (
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <Chat activePatient={activePatient} allPatients={allPatients} key={activePatient?.id || "no-patient"} />
+            <Chat activePatient={activePatient} allPatients={allPatients} opticaName={opticaData.name} key={activePatient?.id || "no-patient"} />
           </div>
         )}
       </div>
