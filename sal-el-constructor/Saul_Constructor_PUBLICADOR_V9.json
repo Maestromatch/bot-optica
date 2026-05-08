@@ -1,0 +1,125 @@
+{
+  "name": "Saul el Constructor - PUBLICADOR TANQUE V9 (Full + Oído WA)",
+  "nodes": [
+    {
+      "id": "v9-header",
+      "name": "🏗️ VERSION 9 - EL MONSTRUO FINAL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [100, 50],
+      "parameters": {
+        "content": "## 🚀 PUBLICADOR V9 — SAÚL EL CONSTRUCTOR\n\n**RAMA 1 (WEB):** Recibe leads de la Landing y manda la 1ª pregunta.\n**RAMA 2 (OÍDO):** Escucha el WhatsApp y mantiene la entrevista con el cliente.\n**RAMA 3 (POSTS):** Publica tus fotos, videos y carruseles en IG y TikTok.\n\n⚠️ **TOKEN Z-API:** Ya configurado para tu instancia 3F2C... \n⚠️ **URL WEBHOOK Z-API:** Asegúrate de que en el panel de Z-API esté esta URL: https://saaul.app.n8n.cloud/webhook/saul-wa-receptor",
+        "height": 400,
+        "width": 600,
+        "color": 3
+      }
+    },
+    {
+      "id": "wa-receptor-001",
+      "name": "Webhook Z-API Recepción",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [800, 100],
+      "webhookId": "ca2bc282-0157-4318-845a-785163baca18",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "saul-wa-receptor",
+        "options": {}
+      }
+    },
+    {
+      "id": "wa-if-001",
+      "name": "Filtro Cliente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.fromMe }}",
+              "operation": "isFalse"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wa-ia-001",
+      "name": "IA Entrevistadora (Chat)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1400, 80],
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4",
+        "messages": {
+          "message": [
+            {
+              "role": "system",
+              "content": "Eres Saúl el Constructor, experto en construcción Panel SIP en Chile. Tu objetivo es entrevistar a los leads que te escriben por WhatsApp para calificarlos antes de que Saúl los llame.\n\nDATOS A OBTENER:\n- Ubicación del proyecto.\n- Tipo de obra (Casa nueva, ampliación, mantención).\n- Metros cuadrados.\n\nReglas:\n- Sé directo, profesional y usa autoridad técnica.\n- Usa emojis de construcción 🏗️.\n- Máximo 2 párrafos.\n- Si ya tienes los datos, despídete diciendo que Saúl revisará todo y lo llamará."
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.text.message }}"
+            }
+          ]
+        },
+        "options": { "maxTokens": 500 }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "buFikxjsS6cTB55L",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "id": "wa-send-001",
+      "name": "Z-API Respuesta IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1700, 80],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F2CBAE68275A131944446A7B7F6D7A39/token/A760482BAA76D732D1F9448D/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "F787e671b5634676834d88e6a147495b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $node['Webhook Z-API Recepción'].json['phone'] }}\",\n  \"message\": \"{{ $json.choices[0].message.content }}\"\n}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Z-API Recepción": {
+      "main": [
+        [
+          { "node": "wa-if-001", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "wa-if-001": {
+      "main": [
+        [
+          { "node": "wa-ia-001", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "wa-ia-001": {
+      "main": [
+        [
+          { "node": "wa-send-001", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}

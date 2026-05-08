@@ -1,0 +1,123 @@
+{
+  "name": "Saul el Constructor - OÍDO V1 (Entrevistador WA)",
+  "nodes": [
+    {
+      "id": "oido-001",
+      "name": "Webhook Z-API Recepción",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [400, 300],
+      "webhookId": "ca2bc282-0157-4318-845a-785163baca18",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "saul-wa-receptor",
+        "options": {}
+      }
+    },
+    {
+      "id": "oido-002",
+      "name": "IF - Es mensaje de cliente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 300],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.fromMe }}",
+              "operation": "isFalse"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{ $json.text.message }}",
+              "operation": "notEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "oido-003",
+      "name": "IA Entrevistadora (Chat)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1000, 280],
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4",
+        "messages": {
+          "message": [
+            {
+              "role": "system",
+              "content": "Eres Saúl el Constructor, experto en Panel SIP en Chile. Tu objetivo es calificar al lead mediante una entrevista amable pero técnica. \n\nDATOS QUE NECESITAS OBTENER (si no los tienes aún):\n1. Ubicación exacta.\n2. Tipo de proyecto (casa, ampliación, mantención).\n3. Metros cuadrados aproximados.\n4. Presupuesto estimado.\n\nReglas:\n- Sé breve (máx 2 párrafos).\n- Usa emojis de construcción.\n- Si el cliente responde con dudas técnicas, resuélvelas con autoridad.\n- Al final de la entrevista, dile que Saúl revisará los datos y lo llamará personalmente.\n- NO repitas preguntas que ya contestó."
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.text.message }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 500
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "buFikxjsS6cTB55L",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "id": "oido-004",
+      "name": "Z-API Responder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1300, 280],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F2CBAE68275A131944446A7B7F6D7A39/token/A760482BAA76D732D1F9448D/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $node['Webhook Z-API Recepci\u00f3n'].json['phone'] }}\",\n  \"message\": \"{{ $json.choices[0].message.content }}\"\n}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Z-API Recepción": {
+      "main": [
+        [
+          {
+            "node": "IF - Es mensaje de cliente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Es mensaje de cliente?": {
+      "main": [
+        [
+          {
+            "node": "IA Entrevistadora (Chat)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA Entrevistadora (Chat)": {
+      "main": [
+        [
+          {
+            "node": "Z-API Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
