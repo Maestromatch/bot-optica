@@ -1,0 +1,77 @@
+{
+  "name": "Saul el Constructor - PUBLICADOR V11 (Blindado con Google Sheets)",
+  "nodes": [
+    {
+      "id": "v11-note",
+      "name": "🏗️ VERSION 11 - BLINDAJE TOTAL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [100, 50],
+      "parameters": {
+        "content": "## 🛡️ V11 — BLINDAJE GOOGLE SHEETS\n\n1. **REGISTRO:** Al llenar la web, el número se guarda en Sheets.\n2. **FILTRO:** El robot solo responde si el número está en la lista.\n3. **PAZ TOTAL:** Tus amigos, familiares y grupos serán ignorados por la IA.",
+        "height": 300,
+        "width": 500,
+        "color": 6
+      }
+    },
+    {
+      "id": "sheets-save-001",
+      "name": "Guardar en Lista Blanca",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1000, 500],
+      "parameters": {
+        "operation": "append",
+        "sheetId": "TU_ID_DE_HOJA_AQUI",
+        "range": "A:A",
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telefono": "={{ $json.body.telefono }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "sheets-check-001",
+      "name": "Buscar en Lista Blanca",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1100, 100],
+      "parameters": {
+        "operation": "lookup",
+        "sheetId": "TU_ID_DE_HOJA_AQUI",
+        "lookupColumn": "Telefono",
+        "lookupValue": "={{ $node[\"Webhook Z-API Recepción\"].json.body.phone }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "if-whitelist-001",
+      "name": "Está en la lista?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1400, 100],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.Telefono }}",
+              "operation": "notEmpty"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Está en la lista?": {
+      "main": [
+        [
+          { "node": "AI Agent", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
