@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Vapi from "@vapi-ai/web";
+import QueueMonitor from "../components/QueueMonitor";
 // ── PALETA FUTURISTA (Dark Mode No Invasivo) ───────────────────
 const C = {
   bg:         "#090A0F", // Fondo muy oscuro, casi negro con tono azulado
@@ -951,6 +952,11 @@ export default function AukenOpticaDashboard() {
               setShowProfileModal={setShowProfileModal}
               setEditingProfile={setEditingProfile}
             />
+
+            {/* MONITOR DE COLAS (Modo Tanque Activo) */}
+            <div style={{ marginTop: 40 }}>
+              <QueueMonitor />
+            </div>
           </Fade>
         )}
       </div>

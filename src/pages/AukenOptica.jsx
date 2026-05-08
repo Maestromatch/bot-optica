@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import { supabase } from "../lib/supabase";
+import { useConversation } from "../lib/useConversation";
 
 function dbToPatient(row) {
   const hoy = new Date();
@@ -499,6 +500,12 @@ function Chat({ activePatient, allPatients = [], opticaName = "Aukén" }) {
     ? `¡Hola, ${activePatient.name.split(" ")[0]}! Bienvenido/a de vuelta a ${opticaName}. ${activePatient.estado === "vencida" ? "Vi que tu receta del " + activePatient.receta.fecha + " está vencida — te recomiendo agendar un control pronto. " : activePatient.estado === "proxima" ? "Tu próximo control se acerca (" + activePatient.nextControl + "). " : ""}¿En qué te puedo ayudar hoy?`
     : `¡Hola! Soy Aukén, el asistente de ${opticaName}. Puedo ayudarte con tu receta, agendar un control o responder tus dudas. Si eres paciente nuestro, dime tu nombre o RUT y accedo a tu ficha. ¿Cómo te llamo?`;
 
+  const { messages: historicMessages, conversacionId } = useConversation({
+    pacienteId: activePatient?.id,
+    phone: activePatient?.telefono,
+    canal: "whatsapp",
+  });
+
   const [messages, setMessages] = useState([mkMsg("assistant", WELCOME)]);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
@@ -506,10 +513,18 @@ function Chat({ activePatient, allPatients = [], opticaName = "Aukén" }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Sincronizar mensajes históricos y Realtime
+  useEffect(() => {
+    if (historicMessages && historicMessages.length > 0) {
+      setMessages(historicMessages);
+    } else {
+      setMessages([mkMsg("assistant", WELCOME)]);
+    }
+  }, [activePatient?.id, historicMessages, WELCOME]);
+
   // Reset al cambiar paciente activo
   useEffect(() => {
     setDetectedPatient(activePatient);
-    setMessages([mkMsg("assistant", WELCOME)]);
     setInput("");
     setLoading(false);
   }, [activePatient?.id]);
