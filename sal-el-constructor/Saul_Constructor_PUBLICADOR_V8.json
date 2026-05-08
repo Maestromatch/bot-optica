@@ -75,10 +75,10 @@
       "position": [1400, 300],
       "parameters": {
         "method": "POST",
-        "url": "https://api.evolution-api.com/instance/saul/message/sendText",
+        "url": "https://api.z-api.io/instances/3F2CBAE68275A131944446A7B7F6D7A39/token/A760482BAA76D732D1F9448D/send-text",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $node['Webhook Landing Page'].json['telefono'] }}\",\n  \"text\": \"{{ $node['IA Calificadora'].json['choices'][0]['message']['content'] }}\"\n}",
+        "jsonBody": "={\n  \"phone\": \"{{ $node['Webhook Landing Page'].json['telefono'] }}\",\n  \"message\": \"{{ $node['IA Calificadora'].json['choices'][0]['message']['content'] }}\"\n}",
         "options": {}
       }
     },
