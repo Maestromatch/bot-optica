@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 
 // ── PALETA WAR ROOM ──────────────────────────────────────────────
 const K = {
@@ -25,15 +26,7 @@ const K = {
   white:    "#FFFFFF",
 };
 
-// ── DATOS AGENCIA ────────────────────────────────────────────────
-const CLIENTS = [
-  { id:1,  name:"Clínica Dental Arcos",   niche:"dental",      icon:"🦷", plan:"Pro",   status:"active",     mrr:250000, contacts:312, booked:47,  color:K.neon,  since:"Feb 2025" },
-  { id:2,  name:"Óptica Visión Clara",     niche:"optica",      icon:"👁️", plan:"Pro",   status:"active",     mrr:250000, contacts:189, booked:28,  color:K.blue,  since:"Mar 2025" },
-  { id:3,  name:"Veterinaria PataPata",    niche:"veterinaria", icon:"🐾", plan:"Pro",   status:"onboarding", mrr:250000, contacts:12,  booked:2,   color:K.amber, since:"May 2025" },
-  { id:4,  name:"Carnicería El Toro",      niche:"carniceria",  icon:"🥩", plan:"Base",  status:"paused",     mrr:0,      contacts:421, booked:0,   color:K.red,   since:"Ene 2025" },
-  { id:5,  name:"Óptica Lux Centro",       niche:"optica",      icon:"👁️", plan:"Base",  status:"active",     mrr:150000, contacts:145, booked:22,  color:K.blue,  since:"Mar 2025" },
-  { id:6,  name:"Óptica Foco Sur",         niche:"optica",      icon:"👁️", plan:"Pro",   status:"onboarding", mrr:250000, contacts:8,   booked:1,   color:K.amber, since:"May 2025" },
-];
+// ── DATOS AGENCIA (Dinamizados en el componente) ────────────────
 
 const PRODUCTS = [
   { id:"widget",       name:"Widget Atendedor",    icon:"💬", clients:4, status:"live",    desc:"Chatbot Claude API · 24/7",          color:K.neon  },
@@ -313,6 +306,30 @@ function OnboardingModal({ onClose }) {
       onFocus={e=>e.target.style.borderColor=K.neon} onBlur={e=>e.target.style.borderColor=K.b1} />
   );
 
+  const handleActivate = async () => {
+    const newClient = {
+      nombre: data.name || "Nuevo Cliente",
+      niche: data.niche,
+      plan: data.plan,
+      icon: NICHES.find(n => n[0] === data.niche)?.[1] || "🏢",
+      status: "onboarding",
+      mrr: data.plan === "pro" ? 250000 : data.plan === "total" ? 380000 : 150000,
+      contacts: 0,
+      booked: 0,
+      color: data.niche === "optica" ? K.blue : data.niche === "dental" ? K.neon : data.niche === "veterinaria" ? K.amber : K.red,
+      since: new Date().toLocaleDateString("es-CL", { month: "short", year: "numeric" }),
+      owner_name: data.owner,
+      phone: data.phone,
+    };
+
+    const { error } = await supabase.from("clientes_agencia").insert([newClient]);
+    if (error) {
+      alert("Error al activar cliente: " + error.message);
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.85)", backdropFilter:"blur(8px)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ background:K.bgMid, border:`1px solid ${K.b1}`, borderRadius:10, width:"100%", maxWidth:480, overflow:"hidden" }}>
@@ -400,7 +417,7 @@ function OnboardingModal({ onClose }) {
           <button onClick={() => step > 1 ? setStep(s=>s-1) : onClose()} style={{ background:"none", border:`1px solid ${K.b1}`, color:K.inkMid, padding:"8px 16px", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
             {step===1 ? "Cancelar" : "← Atrás"}
           </button>
-          <button onClick={() => step < steps.length ? setStep(s=>s+1) : onClose()} style={{ background:step===steps.length ? K.neonDim : K.bgHover, color:step===steps.length ? K.bg : K.ink, border:`1px solid ${step===steps.length ? K.neon : K.b1}`, padding:"8px 18px", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:"0.06em" }}>
+          <button onClick={() => step < steps.length ? setStep(s=>s+1) : handleActivate()} style={{ background:step===steps.length ? K.neonDim : K.bgHover, color:step===steps.length ? K.bg : K.ink, border:`1px solid ${step===steps.length ? K.neon : K.b1}`, padding:"8px 18px", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:"0.06em" }}>
             {step===steps.length ? "🐻‍❄️ ACTIVAR" : "Siguiente →"}
           </button>
         </div>
@@ -411,13 +428,28 @@ function OnboardingModal({ onClose }) {
 
 // ── ROOT ─────────────────────────────────────────────────────────
 export default function AukenOS() {
+  const [clients, setClients] = useState([]);
   const [view, setView]             = useState("overview");
   const [showOnboard, setOnboard]   = useState(false);
   const [liveActivity, setActivity] = useState(ACTIVITY);
+  const [loading, setLoading]       = useState(true);
   const clock                       = useClock();
 
-  const mrr    = CLIENTS.filter(c=>c.status!=="paused").reduce((a,c)=>a+c.mrr,0);
-  const active = CLIENTS.filter(c=>c.status==="active").length;
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data, error } = await supabase.from("clientes_agencia").select("*").order("created_at", { ascending: false });
+      if (!error && data) setClients(data);
+      setLoading(false);
+    };
+    fetchClients();
+    
+    // Suscripción Realtime
+    const sub = supabase.channel("saas-clients").on("postgres_changes", { event: "*", schema: "public", table: "clientes_agencia" }, fetchClients).subscribe();
+    return () => { supabase.removeChannel(sub); };
+  }, []);
+
+  const mrr    = clients.filter(c=>c.status!=="paused").reduce((a,c)=>a+Number(c.mrr || 0),0);
+  const active = clients.filter(c=>c.status==="active").length;
 
   // Simula actividad en vivo
   const NEW_EVENTS = [
@@ -506,9 +538,9 @@ export default function AukenOS() {
               {/* KPI row */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
                 <StatBox value={mrr/1000} label="MRR" sub="miles CLP / mes" color={K.neon} suffix="K" />
-                <StatBox value={active} label="Clientes activos" sub={`de ${CLIENTS.length} totales`} color={K.blue} />
-                <StatBox value={CLIENTS.reduce((a,c)=>a+c.contacts,0)} label="Consultas atendidas" sub="total histórico" color={K.amber} />
-                <StatBox value={CLIENTS.reduce((a,c)=>a+c.booked,0)} label="Citas generadas" sub="por el sistema" color={K.neon} />
+                <StatBox value={active} label="Clientes activos" sub={`de ${clients.length} totales`} color={K.blue} />
+                <StatBox value={clients.reduce((a,c)=>a+Number(c.contacts || 0),0)} label="Consultas atendidas" sub="total histórico" color={K.amber} />
+                <StatBox value={clients.reduce((a,c)=>a+Number(c.booked || 0),0)} label="Citas generadas" sub="por el sistema" color={K.neon} />
               </div>
 
               {/* Products grid */}
@@ -535,7 +567,13 @@ export default function AukenOS() {
                       <div key={i} style={{ fontSize:8, color:K.inkFaint, fontFamily:"'IBM Plex Mono',monospace", textTransform:"uppercase", letterSpacing:"0.08em", textAlign: i > 2 ? "right" : "left" }}>{h}</div>
                     ))}
                   </div>
-                  {CLIENTS.map((c, i) => <ClientRow key={c.id} client={c} idx={i} />)}
+                  {clients.length === 0 ? (
+                    <div style={{ padding: 40, textAlign: "center", color: K.inkFaint, fontSize: 12 }}>
+                      No hay clientes registrados aún. Usa el botón + CLIENTE para empezar.
+                    </div>
+                  ) : (
+                    clients.map((c, i) => <ClientRow key={c.id} client={c} idx={i} />)
+                  )}
                 </div>
               </div>
             </div>
@@ -555,7 +593,7 @@ export default function AukenOS() {
               {/* Niche breakdown */}
               <div style={{ background:K.bgSurf, border:`1px solid ${K.b0}`, borderRadius:6, padding:"14px 16px" }}>
                 <div style={{ fontSize:9, color:K.inkFaint, fontFamily:"'IBM Plex Mono',monospace", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10 }}>MRR por nicho</div>
-                <NicheBreakdown clients={CLIENTS} />
+                {clients.length > 0 ? <NicheBreakdown clients={clients} /> : <div style={{ fontSize:10, color:K.inkFaint }}>Sin datos</div>}
               </div>
 
               {/* System status */}
@@ -593,14 +631,14 @@ export default function AukenOS() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
               <div>
                 <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontWeight:800, fontSize:22, letterSpacing:"0.06em" }}>CLIENTES</div>
-                <div style={{ fontSize:10, color:K.inkFaint, fontFamily:"'IBM Plex Mono',monospace" }}>{CLIENTS.length} registrados · {active} activos</div>
+                <div style={{ fontSize:10, color:K.inkFaint, fontFamily:"'IBM Plex Mono',monospace" }}>{clients.length} registrados · {active} activos</div>
               </div>
               <button onClick={() => setOnboard(true)} style={{ background:K.neonDim, color:K.bg, border:"none", borderRadius:4, padding:"8px 16px", fontSize:11, fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:"0.08em", cursor:"pointer" }}>
                 + AGREGAR CLIENTE
               </button>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
-              {CLIENTS.map(c => {
+              {clients.map(c => {
                 const s = S[c.status];
                 return (
                   <div key={c.id} style={{ background:K.bgSurf, border:`1px solid ${K.b0}`, borderLeft:`3px solid ${c.color}`, borderRadius:6, padding:"14px 16px", cursor:"pointer", transition:"all .2s" }}
@@ -666,13 +704,13 @@ export default function AukenOS() {
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 <div style={{ background:K.bgSurf, border:`1px solid ${K.b0}`, borderRadius:6, padding:"16px 18px" }}>
                   <div style={{ fontSize:9, color:K.inkFaint, fontFamily:"'IBM Plex Mono',monospace", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:12 }}>Breakdown por cliente</div>
-                  {CLIENTS.filter(c=>c.mrr>0).map(c => (
+                  {clients.filter(c=>Number(c.mrr)>0).map(c => (
                     <div key={c.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${K.b0}` }}>
                       <div style={{ display:"flex", gap:7, alignItems:"center" }}>
                         <span style={{ fontSize:12 }}>{c.icon}</span>
-                        <span style={{ fontSize:11, color:K.inkMid, fontFamily:"'IBM Plex Mono',monospace" }}>{c.name.replace(/Clínica |Óptica |Veterinaria /,"")}</span>
+                        <span style={{ fontSize:11, color:K.inkMid, fontFamily:"'IBM Plex Mono',monospace" }}>{(c.nombre || c.name).replace(/Clínica |Óptica |Veterinaria /,"")}</span>
                       </div>
-                      <span style={{ fontSize:12, color:K.neon, fontFamily:"'IBM Plex Mono',monospace", fontWeight:500 }}>${(c.mrr/1000).toFixed(0)}K</span>
+                      <span style={{ fontSize:12, color:K.neon, fontFamily:"'IBM Plex Mono',monospace", fontWeight:500 }}>${(Number(c.mrr)/1000).toFixed(0)}K</span>
                     </div>
                   ))}
                 </div>

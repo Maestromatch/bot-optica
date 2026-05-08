@@ -67,25 +67,28 @@ const buildSystemPrompt = (patient, opticaName = "Aukén") => {
   const fichaSection = hasPatient ? `
 === FICHA DEL PACIENTE IDENTIFICADO ===
 Nombre: ${p.name} | RUT: ${p.rut} | Edad: ${p.age} años
-Último control: ${p.lastVisit} | Próximo control: ${p.nextControl}
-Producto actual: ${p.producto}
-Estado receta: ${p.estado === "vencida" ? "VENCIDA" : p.estado === "proxima" ? "PRÓXIMA A VENCER" : "VIGENTE"}
+Último control: ${p.lastVisit || "Sin registros previos"} | Próximo control: ${p.nextControl || "Pendiente agendar"}
+Producto actual: ${p.producto || "No registrado"}
+Estado receta: ${p.estado === "vencida" ? "VENCIDA" : p.estado === "proxima" ? "PRÓXIMA A VENCER" : p.estado === "vigente" ? "VIGENTE" : "SIN RECETA"}
 Alertas: ${p.alertas.join(", ") || "Ninguna"}
 
+${p.receta.od.esf || p.receta.od.cil ? `
 RECETA ÓPTICA (${p.receta.fecha}):
 - OD: esf ${p.receta.od.esf} | cil ${p.receta.od.cil} | eje ${p.receta.od.eje} | AV ${p.receta.od.av}
 - OI: esf ${p.receta.oi.esf} | cil ${p.receta.oi.cil} | eje ${p.receta.oi.eje} | AV ${p.receta.oi.av}
 ${p.receta.adicion ? `- Adición: ${p.receta.adicion}` : ""}
 - DP: ${p.receta.dp} | Tipo: ${p.receta.tipo}
-- Notas clínicas: ${p.receta.notas}
-- Optometrista: ${p.receta.optometrista}
+- Notas: ${p.receta.notas}
+` : "NO HAY RECETA REGISTRADA PARA ESTE PACIENTE."}
 ======================================
 ` : "";
 
   const alertSection = recetaVencida
-    ? `INSTRUCCIÓN IMPORTANTE: Este paciente tiene la receta VENCIDA. Al inicio de la conversación menciona amablemente que su receta del ${p?.receta.fecha} ha vencido y recomienda agendar un control. No seas insistente pero sí claro.`
+    ? `INSTRUCCIÓN: Este paciente tiene la receta VENCIDA. Menciona amablemente que su receta del ${p?.receta.fecha} ha vencido y recomienda agendar un control.`
     : proximoControl
-    ? `INSTRUCCIÓN: El control de este paciente se aproxima (${p?.nextControl}). Menciona que se acerca la fecha de su próximo control.`
+    ? `INSTRUCCIÓN: El control de este paciente se aproxima (${p?.nextControl}). Menciona que se acerca la fecha.`
+    : !p?.receta.od.esf && hasPatient
+    ? `INSTRUCCIÓN CRÍTICA: Este paciente NO TIENE RECETA registrada. Dile cortésmente: "Aún no tenemos una receta registrada a tu nombre en ${opticaName}, por lo que te recomendamos agendar un examen visual con nosotros para emitir tu primera ficha."`
     : "";
 
   return `Eres "Aukén", el asistente virtual de ${opticaName}.
