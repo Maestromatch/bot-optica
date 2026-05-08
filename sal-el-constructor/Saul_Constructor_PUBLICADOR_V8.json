@@ -1,0 +1,939 @@
+{
+  "name": "Saul el Constructor - PUBLICADOR TANQUE V8 (Auto + Carrusel IG + TikTok)",
+  "nodes": [
+    {
+      "id": "sticky-instrucciones",
+      "name": "📌 LEER ANTES DE ACTIVAR",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [100, 50],
+      "parameters": {
+        "content": "# 🏗️ PUBLICADOR TANQUE V8 — SAÚL EL CONSTRUCTOR\n\n## ✅ CONFIGURAR ANTES DE ACTIVAR:\n\n**1. Token Instagram:** Se vence. Renuévalo en Meta for Developers si falla.\n\n**2. TikTok:** Reemplaza `TU_TIKTOK_ACCESS_TOKEN_AQUI` con tu token OAuth2 de TikTok for Developers (tiktok.com/developers).\n\n**3. Google Drive:** Las carpetas DEBEN estar compartidas públicamente para que Instagram y TikTok puedan acceder a las URLs de archivos.\n\n**4. WhatsApp (Evolution API):** Verifica que tu instancia siga activa en evolution-api.com.\n\n## 🗂️ CÓMO USAR CARRUSEL:\nSube 2 a 10 fotos a la carpeta CARRUSELES. El scheduler corre cada 30 min, detecta las fotos y las publica como carrusel automáticamente. Borra las fotos después de publicar para evitar re-publicar.\n\n## 🐛 BUGS CORREGIDOS vs V7:\n- La rama Carrusel estaba vacía (nunca publicaba)\n- El trigger por archivo causaba N posts en vez de 1 carrusel\n- La detección por isExecuted era inestable\n- Se agregó TikTok (foto, video y carrusel)\n- Se agregó flujo correcto IG Carrusel: items → container → publicar",
+        "height": 480,
+        "width": 620,
+        "color": 7
+      }
+    },
+
+    {
+      "id": "sticky-carrusel",
+      "name": "📸 FLUJO CARRUSEL — Cómo funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [100, 1180],
+      "parameters": {
+        "content": "## 🖼️ Flujo Carrusel (API IG Correcta)\n\n1. **Scheduler** corre cada 30 min\n2. **Lista archivos** en carpeta CARRUSELES (Drive)\n3. **Filtra** solo imágenes (jpg/png/webp), máx 10\n4. Si hay **≥ 2 imágenes** → continúa\n5. **IA genera caption** basado en nombre de archivos\n6. Por cada imagen: **crea container item** en IG\n7. **Agrega todos los IDs** → crea container CAROUSEL\n8. **Espera 60s** → Publica en IG\n9. **TikTok** publica el carrusel como Photo Post\n\n⚠️ Borra las fotos de CARRUSELES después de publicar.",
+        "height": 300,
+        "width": 500,
+        "color": 5
+      }
+    },
+
+    {
+      "id": "lead-001",
+      "name": "Webhook Landing Page",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [800, 300],
+      "webhookId": "ca2bc282-0157-4318-845a-785163baca17",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "constructor-saul-lead",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "lead-002",
+      "name": "IA Calificadora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1100, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres el filtro de ventas experto de 'Saúl el Constructor'. Tu objetivo es ahorrarle tiempo a Saúl extrayendo la máxima información posible. Pregunta amablemente pero con firmeza: 1. Ubicación exacta (Comuna y Sector). 2. Tipo de Propiedad: ¿Es casa o departamento? ¿Tienen terreno o es ampliación? 3. Magnitud: ¿Cuántos m2 aproximados? 4. Presupuesto: ¿Rango estimado de inversión? (Explica que esto permite dar la solución técnica correcta). 5. Plazos: ¿Para cuándo necesitan iniciar la obra? Sé profesional, directo y usa autoridad técnica. Si el cliente no tiene presupuesto o terreno, ofrece asesoría comercial inicial gratuita.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Nuevo lead: {{ $node['Webhook Landing Page'].json['nombre'] }} - Mensaje: {{ $node['Webhook Landing Page'].json['mensaje'] }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "HsqlRp0SxY1IdmzT",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+
+    {
+      "id": "lead-003",
+      "name": "Enviar WhatsApp Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1400, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.evolution-api.com/instance/saul/message/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $node['Webhook Landing Page'].json['telefono'] }}\",\n  \"text\": \"{{ $node['IA Calificadora'].json['choices'][0]['message']['content'] }}\"\n}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "foto-001",
+      "name": "Trigger Fotos",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [800, 620],
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1iRvGzwhSwk9qtXaxvfuF-Xc_ZwWq6yUb",
+          "mode": "list",
+          "cachedResultName": "fotos",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1iRvGzwhSwk9qtXaxvfuF-Xc_ZwWq6yUb"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uqdx7FMLohZVyoTl",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+
+    {
+      "id": "foto-002",
+      "name": "IA Caption - Foto",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1100, 620],
+      "parameters": {
+        "prompt": "=Eres Saúl el Constructor, el experto #1 en construcción Panel SIP y mantenciones de alto nivel en Chile. Tono: profesional, directo, que genera confianza inmediata.\n\nCrea un post de Instagram que DETENGA el scroll. Proyecto: {{ $json.name }}\n\nEstructura OBLIGATORIA:\n1. 🔥 GANCHO (primera línea explosiva, máx 10 palabras)\n2. 💡 Beneficio clave del trabajo realizado (2-3 líneas)\n3. ⚙️ Detalle técnico que demuestre expertise\n4. 📲 CTA claro: \"Cotiza por WhatsApp\" (incluye el número si lo tienes)\n\nUsa más de 6 emojis de construcción 🏗️🔨🪚🪛🧱🔩\nHashtags al final: #SaulElConstructor #PanelSIPChile #ConstruccionChile #RemodelacionChile #ObraGruesa #ConstruyeConSaul",
+        "options": {
+          "maxTokens": 500,
+          "model": "gpt-4"
+        },
+        "requestOptions": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "buFikxjsS6cTB55L",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+
+    {
+      "id": "foto-003",
+      "name": "Procesar Foto IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 620],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "image_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{ $('Trigger Fotos').item.json.id }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('IA Caption - Foto').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "foto-004",
+      "name": "Espera 60s - Foto",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1700, 620],
+      "webhookId": "wait-foto-001",
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      }
+    },
+
+    {
+      "id": "foto-005",
+      "name": "Publicar Foto IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 620],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media_publish",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "creation_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "foto-006",
+      "name": "TikTok - Publicar Foto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2300, 620],
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/content/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_TIKTOK_ACCESS_TOKEN_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"media_type\": \"PHOTO\",\n  \"post_info\": {\n    \"title\": {{ JSON.stringify($('IA Caption - Foto').item.json.text.substring(0, 150)) }},\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\",\n    \"disable_duet\": false,\n    \"disable_comment\": false,\n    \"disable_stitch\": false\n  },\n  \"source_info\": {\n    \"source\": \"PULL_FROM_URL\",\n    \"photo_images\": [\"https://drive.google.com/uc?export=download&id={{ $('Trigger Fotos').item.json.id }}\"],\n    \"photo_cover_index\": 0\n  }\n}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "video-001",
+      "name": "Trigger Videos",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [800, 900],
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1OHEIQu83uTy8tG2piD33JlTTTS3uKESh",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1OHEIQu83uTy8tG2piD33JlTTTS3uKESh"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uqdx7FMLohZVyoTl",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+
+    {
+      "id": "video-002",
+      "name": "IA Caption - Video",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1100, 900],
+      "parameters": {
+        "prompt": "=Eres Saúl el Constructor, el experto #1 en construcción Panel SIP en Chile. Tono: profesional, energético, que genera confianza y para el scroll.\n\nCrea un caption de Instagram para un VIDEO de obra. Proyecto: {{ $json.name }}\n\nEstructura OBLIGATORIA:\n1. 🎬 GANCHO para video (\"Mira cómo...\" / \"Esto es lo que pasa cuando...\")\n2. ⚡ Lo más impactante del video en 2 líneas\n3. 🏗️ Por qué contratar a Saúl (expertise, garantía, calidad)\n4. 📲 CTA: Ver proceso completo + cotizar por WhatsApp\n\nUsa 5+ emojis 🔨🪚🏗️🧱⚙️\nHashtags: #SaulElConstructor #PanelSIPChile #ConstruccionChile #Obra #ReelsConstruccion #TikTokConstruccion",
+        "options": {
+          "maxTokens": 500,
+          "model": "gpt-4"
+        },
+        "requestOptions": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "buFikxjsS6cTB55L",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+
+    {
+      "id": "video-003",
+      "name": "Procesar Video IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 900],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "video_url",
+              "value": "=https://drive.google.com/uc?export=download&id={{ $('Trigger Videos').item.json.id }}"
+            },
+            {
+              "name": "media_type",
+              "value": "VIDEO"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('IA Caption - Video').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "video-004",
+      "name": "Espera 60s - Video IG",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1700, 900],
+      "webhookId": "wait-video-ig-001",
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      }
+    },
+
+    {
+      "id": "video-005",
+      "name": "Publicar Video IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 900],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media_publish",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "creation_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "video-006",
+      "name": "TikTok - Init Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2300, 900],
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_TIKTOK_ACCESS_TOKEN_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post_info\": {\n    \"title\": {{ JSON.stringify($('IA Caption - Video').item.json.text.substring(0, 150)) }},\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\",\n    \"disable_duet\": false,\n    \"disable_comment\": false,\n    \"disable_stitch\": false,\n    \"video_cover_timestamp_ms\": 1000\n  },\n  \"source_info\": {\n    \"source\": \"PULL_FROM_URL\",\n    \"video_url\": \"https://drive.google.com/uc?export=download&id={{ $('Trigger Videos').item.json.id }}\"\n  }\n}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "video-007",
+      "name": "Espera 30s - TikTok Video",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2600, 900],
+      "webhookId": "wait-tiktok-video-001",
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      }
+    },
+
+    {
+      "id": "video-008",
+      "name": "TikTok - Check Status Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2900, 900],
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_TIKTOK_ACCESS_TOKEN_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"publish_id\": \"{{ $('TikTok - Init Video').item.json.data.publish_id }}\"\n}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "carrusel-001",
+      "name": "Scheduler Carrusel (30min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [800, 1380],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "carrusel-002",
+      "name": "Listar Archivos Carrusel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1100, 1380],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "'1YUlZWrFhbiltg0Ly4YAjzlbkZhimoA9z' in parents and trashed = false"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType)"
+            },
+            {
+              "name": "orderBy",
+              "value": "createdTime"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "uqdx7FMLohZVyoTl",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+
+    {
+      "id": "carrusel-003",
+      "name": "Code - Filtrar Imagenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 1380],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Toma la respuesta de Google Drive API y filtra solo imágenes\nconst input = $input.first().json;\nconst files = input.files || [];\n\n// Filtrar solo archivos de imagen\nconst imageFiles = files.filter(file => {\n  const name = (file.name || '').toLowerCase();\n  const mime = (file.mimeType || '');\n  return (\n    mime.startsWith('image/') ||\n    name.endsWith('.jpg') ||\n    name.endsWith('.jpeg') ||\n    name.endsWith('.png') ||\n    name.endsWith('.webp')\n  );\n});\n\n// Instagram permite máximo 10 imágenes en carrusel\nconst toProcess = imageFiles.slice(0, 10);\n\nreturn [{\n  json: {\n    count: toProcess.length,\n    fileIds: toProcess.map(f => f.id),\n    fileIdsJson: JSON.stringify(toProcess.map(f => f.id)),\n    firstFileName: (toProcess[0]?.name || 'Proyecto Constructor Saul').replace(/\\.[^/.]+$/, ''),\n    allFileNames: toProcess.map(f => f.name).join(', ')\n  }\n}];"
+      }
+    },
+
+    {
+      "id": "carrusel-004",
+      "name": "IF - Hay suficientes imagenes",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1700, 1380],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.count }}",
+              "operation": "largerEqual",
+              "value2": 2
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "carrusel-005",
+      "name": "IA Caption - Carrusel",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [2000, 1340],
+      "parameters": {
+        "prompt": "=Eres Saúl el Constructor, el experto #1 en construcción Panel SIP en Chile. Tono: profesional, directo, que para el scroll.\n\nCrea un caption para un POST CARRUSEL de {{ $json.count }} imágenes.\nProyecto: {{ $json.firstFileName }}\n\nEstructura OBLIGATORIA:\n1. 🔥 GANCHO (texto corto que explota en la primera imagen)\n2. 💡 Beneficios del proceso mostrado (menciona que hay {{ $json.count }} fotos para deslizar)\n3. ⚙️ Por qué Panel SIP es la mejor opción (velocidad, calidad, precio)\n4. 👈 CTA: \"Desliza para ver el proceso completo\" + cotizar por WhatsApp\n\nUsa 6+ emojis de construcción 🏗️🔨🪚🧱⚙️🪛\nHashtags: #SaulElConstructor #PanelSIPChile #ConstruccionChile #RemodelacionChile #ProcesoConstructivo #CarruselObra",
+        "options": {
+          "maxTokens": 600,
+          "model": "gpt-4"
+        },
+        "requestOptions": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "buFikxjsS6cTB55L",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+
+    {
+      "id": "carrusel-006",
+      "name": "Set - Caption y FileIds",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [2300, 1340],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-caption",
+              "name": "caption",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-fileids",
+              "name": "fileIdsJson",
+              "value": "={{ $('Code - Filtrar Imagenes').item.json.fileIdsJson }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-count",
+              "name": "count",
+              "value": "={{ $('Code - Filtrar Imagenes').item.json.count }}",
+              "type": "number"
+            },
+            {
+              "id": "assign-name",
+              "name": "firstFileName",
+              "value": "={{ $('Code - Filtrar Imagenes').item.json.firstFileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "carrusel-007",
+      "name": "Code - Expandir Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 1340],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Toma 1 item con fileIdsJson y lo expande a N items (uno por imagen)\nconst item = $input.first().json;\nconst fileIds = JSON.parse(item.fileIdsJson || '[]');\nconst caption = item.caption || '🏗️ Nuevo proyecto terminado! Desliza para ver el proceso. #SaulElConstructor';\n\nif (!fileIds.length) {\n  throw new Error('No hay fileIds para expandir');\n}\n\n// Retorna un item por cada imagen del carrusel\nreturn fileIds.map((fileId, index) => ({\n  json: {\n    fileId,\n    imageUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,\n    caption,\n    slotIndex: index,\n    totalSlots: fileIds.length\n  }\n}));"
+      }
+    },
+
+    {
+      "id": "carrusel-008",
+      "name": "HTTP - Crear Item IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2900, 1340],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ $json.imageUrl }}"
+            },
+            {
+              "name": "is_carousel_item",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "carrusel-009",
+      "name": "Code - Agregar IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3200, 1340],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Recolecta todos los IDs de los containers individuales y los une\nconst items = $input.all();\nconst ids = items.map(item => item.json.id).filter(Boolean);\n\nif (ids.length < 2) {\n  throw new Error(`Solo se crearon ${ids.length} items de carrusel. Se necesitan al menos 2. Revisa que las imágenes sean accesibles públicamente en Drive.`);\n}\n\n// Recupera el caption del nodo Set (más arriba en el flujo)\nlet caption = '';\ntry {\n  caption = $('Set - Caption y FileIds').first().json.caption || '';\n} catch(e) {\n  caption = '🏗️ Nuevo proyecto terminado! #SaulElConstructor #PanelSIPChile';\n}\n\nreturn [{\n  json: {\n    children: ids.join(','),\n    count: ids.length,\n    caption,\n    itemIds: ids\n  }\n}];"
+      }
+    },
+
+    {
+      "id": "carrusel-010",
+      "name": "HTTP - Crear Carrusel IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [3500, 1340],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "media_type",
+              "value": "CAROUSEL"
+            },
+            {
+              "name": "children",
+              "value": "={{ $json.children }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.caption }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "carrusel-011",
+      "name": "Espera 60s - Carrusel",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [3800, 1340],
+      "webhookId": "wait-carrusel-001",
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      }
+    },
+
+    {
+      "id": "carrusel-012",
+      "name": "Publicar Carrusel IG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [4100, 1340],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v20.0/17841444240694094/media_publish",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAATDH2rikqYBRSEzWivCmmM2LzuULJISSqVM2RcSIPOzRJoD8V5kRq3DkejaHLkYq5qrS1rUlZCdvUaaOBKVIXyIEJmANUcKJx53C3cYCZBybj16XUiUX8yU4e3t6shFgFXN2KWvZA5TZCxkwTBFMgQiChhdIBnr2Nr0GFZCCKdvmNokIazjqfiIxkGslXx1NrD8ZAGDMHZAHPe5bahoNQuMMZAko9oKLGcsmhFLB2FEhPWK10h4UZBdSUVglZBFL7fhkcLk1w25xVgB4XexmlCW4A"
+            },
+            {
+              "name": "creation_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "carrusel-013",
+      "name": "TikTok - Publicar Carrusel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [4400, 1340],
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/content/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_TIKTOK_ACCESS_TOKEN_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"media_type\": \"PHOTO\",\n  \"post_info\": {\n    \"title\": {{ JSON.stringify($('Code - Agregar IDs').item.json.caption.substring(0, 150)) }},\n    \"privacy_level\": \"PUBLIC_TO_EVERYONE\",\n    \"disable_duet\": false,\n    \"disable_comment\": false,\n    \"disable_stitch\": false\n  },\n  \"source_info\": {\n    \"source\": \"PULL_FROM_URL\",\n    \"photo_images\": {{ JSON.stringify($('Code - Agregar IDs').item.json.itemIds.map(id => 'https://drive.google.com/uc?export=download&id=' + id)) }},\n    \"photo_cover_index\": 0\n  }\n}",
+        "options": {}
+      }
+    }
+  ],
+
+  "connections": {
+    "Webhook Landing Page": {
+      "main": [
+        [
+          { "node": "IA Calificadora", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IA Calificadora": {
+      "main": [
+        [
+          { "node": "Enviar WhatsApp Bot", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+
+    "Trigger Fotos": {
+      "main": [
+        [
+          { "node": "IA Caption - Foto", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IA Caption - Foto": {
+      "main": [
+        [
+          { "node": "Procesar Foto IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Procesar Foto IG": {
+      "main": [
+        [
+          { "node": "Espera 60s - Foto", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Espera 60s - Foto": {
+      "main": [
+        [
+          { "node": "Publicar Foto IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publicar Foto IG": {
+      "main": [
+        [
+          { "node": "TikTok - Publicar Foto", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+
+    "Trigger Videos": {
+      "main": [
+        [
+          { "node": "IA Caption - Video", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IA Caption - Video": {
+      "main": [
+        [
+          { "node": "Procesar Video IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Procesar Video IG": {
+      "main": [
+        [
+          { "node": "Espera 60s - Video IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Espera 60s - Video IG": {
+      "main": [
+        [
+          { "node": "Publicar Video IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publicar Video IG": {
+      "main": [
+        [
+          { "node": "TikTok - Init Video", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "TikTok - Init Video": {
+      "main": [
+        [
+          { "node": "Espera 30s - TikTok Video", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Espera 30s - TikTok Video": {
+      "main": [
+        [
+          { "node": "TikTok - Check Status Video", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+
+    "Scheduler Carrusel (30min)": {
+      "main": [
+        [
+          { "node": "Listar Archivos Carrusel", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Listar Archivos Carrusel": {
+      "main": [
+        [
+          { "node": "Code - Filtrar Imagenes", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Filtrar Imagenes": {
+      "main": [
+        [
+          { "node": "IF - Hay suficientes imagenes", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Hay suficientes imagenes": {
+      "main": [
+        [
+          { "node": "IA Caption - Carrusel", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "IA Caption - Carrusel": {
+      "main": [
+        [
+          { "node": "Set - Caption y FileIds", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Set - Caption y FileIds": {
+      "main": [
+        [
+          { "node": "Code - Expandir Items", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Expandir Items": {
+      "main": [
+        [
+          { "node": "HTTP - Crear Item IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Crear Item IG": {
+      "main": [
+        [
+          { "node": "Code - Agregar IDs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Agregar IDs": {
+      "main": [
+        [
+          { "node": "HTTP - Crear Carrusel IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Crear Carrusel IG": {
+      "main": [
+        [
+          { "node": "Espera 60s - Carrusel", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Espera 60s - Carrusel": {
+      "main": [
+        [
+          { "node": "Publicar Carrusel IG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publicar Carrusel IG": {
+      "main": [
+        [
+          { "node": "TikTok - Publicar Carrusel", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "pinData": {},
+  "versionId": "v8-saul-constructor-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ef35511b142ec2c3028ca158015a9c64aa42328153509f4652c4b7496e66fe8"
+  },
+  "id": "saul-publicador-v8",
+  "tags": []
+}
