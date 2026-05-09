@@ -30,20 +30,25 @@ export default function AukenOpticaDashboard() {
   const OPTICA_SLUG = "glowvision";
 
   const refresh = useCallback(async () => {
-    const [optRes, pacRes, citaRes, vntRes, qRes] = await Promise.all([
-      supabase.from("opticas").select("*").eq("slug", OPTICA_SLUG).maybeSingle(),
-      supabase.from("pacientes").select("*").order("created_at", { ascending: false }),
-      supabase.from("citas").select("*").order("fecha", { ascending: true }),
-      supabase.from("ventas").select("*").order("created_at", { ascending: false }),
-      supabase.rpc("get_queue_stats") // Función para ver el pulso real
-    ]);
+    try {
+      const [optRes, pacRes, citaRes, vntRes, qRes] = await Promise.all([
+        supabase.from("opticas").select("*").eq("slug", OPTICA_SLUG).maybeSingle(),
+        supabase.from("pacientes").select("*").order("created_at", { ascending: false }),
+        supabase.from("citas").select("*").order("fecha", { ascending: true }),
+        supabase.from("ventas").select("*").order("created_at", { ascending: false }),
+        supabase.rpc("get_queue_stats").catch(() => ({ data: null }))
+      ]);
 
-    setOptica(optRes.data);
-    setPacientes(pacRes.data || []);
-    setCitas(citaRes.data || []);
-    setVentas(vntRes.data || []);
-    if (qRes.data) setQueue(qRes.data);
-    setLoading(false);
+      setOptica(optRes.data);
+      setPacientes(pacRes.data || []);
+      setCitas(citaRes.data || []);
+      setVentas(vntRes.data || []);
+      if (qRes?.data) setQueue(qRes.data);
+    } catch (err) {
+      console.error("Dashboard Load Error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { refresh(); const t = setInterval(refresh, 5000); return () => clearInterval(t); }, [refresh]);
