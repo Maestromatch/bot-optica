@@ -21,7 +21,7 @@
         "url": "https://api.openai.com/v1/chat/completions",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres el filtro de ventas experto de 'Saúl el Constructor'. Tu objetivo es ahorrarle tiempo a Saúl extrayendo la máxima información posible. Debes preguntar amablemente pero con firmeza:\\n1. Ubicación exacta (Comuna y Sector).\\n2. Tipo de Propiedad: ¿Es casa o departamento? ¿Tienen el terreno o es ampliación?\\n3. Magnitud: ¿Cuántos m2 aproximados tienen en mente?\\n4. Presupuesto: ¿Tienen un rango estimado de inversión? (Indícales que esto ayuda a darles la solución técnica correcta).\\n5. Plazos: ¿Para cuándo necesitan iniciar la obra?\\nSé profesional, directo y usa autoridad técnica. Si el cliente no tiene presupuesto o terreno, indícales que podemos darles asesoría comercial inicial.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Nuevo lead recibido: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"nombre\\\"]}} - Mensaje: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"mensaje\\\"]}}\"\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres el Asistente de Ventas de 'Saúl el Constructor'. Acabas de recibir los datos de un cliente interesado desde la landing page. Tu misión es enviar el primer mensaje de contacto para iniciar la calificación.\\n\\nDATOS RECIBIDOS:\\n- Nombre: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"nombre\\\"]}}\\n- Mensaje inicial: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"mensaje\\\"]}}\\n- Servicio: {{$node[\\\"Webhook Landing Page\\\"].json[\\\"servicio\\\"] || 'Construcción'}}\\n\\nINSTRUCCIÓN:\\nRedacta un mensaje de bienvenida que: \\n1. Salude por su nombre.\\n2. Confirme que recibiste su interés por el servicio específico.\\n3. Haga la primera pregunta técnica para calificar (ej: ubicación del terreno o m2).\\n4. Mantén un tono experto, seco y profesional. Usa emojis de construcción.\"\n    }\n  ]\n}",
         "options": {}
       },
       "name": "IA Calificadora",
@@ -35,13 +35,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.evolution-api.com/instance/saul/message/sendText",
+        "url": "https://api.z-api.io/instances/3F2CBAE68275A131944446A7B7F6D7A39/token/A760482BAA76D732D1F9448D/send-text",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{$node[\\\"Webhook Landing Page\\\"].json[\\\"telefono\\\"]}}\",\n  \"text\": \"{{$node[\\\"IA Calificadora\\\"].json[\\\"choices\\\"][0][\\\"message\\\"][\\\"content\\\"]}}\"\n}",
+        "jsonBody": "={\n  \"phone\": \"{{$node[\\\"Webhook Landing Page\\\"].json[\\\"telefono\\\"]}}\",\n  \"message\": \"{{$node[\\\"IA Calificadora\\\"].json[\\\"choices\\\"][0][\\\"message\\\"][\\\"content\\\"]}}\"\n}",
         "options": {}
       },
-      "name": "Enviar WhatsApp Bot",
+      "name": "Enviar WhatsApp Bot (Z-API)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
