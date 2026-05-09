@@ -22,6 +22,11 @@ Ultima Actualización: 2026-05-09
 - **Semiótica**: Iconografía que comunica estatus y control instantáneo.
 - **Monitor**: Interfaz de chat con indicadores de sentimiento y control manual fluido.
 
+## 🤖 AUTOMATIZACIÓN (n8n-CLI Engine)
+- **Capacidad**: Gestión de flujos de trabajo (workflows), credenciales y ejecuciones.
+- **Flujo**: Aukén agendar -> n8n disparar -> Google Calendar Ismael / Notificaciones Push.
+- **Objetivo**: Sincronización total del ecosistema sin intervención humana manual.
+
 ## 🛡️ REGLAS DE ORO
 1. **Cada peso cuenta**: Optimizar el uso de tokens y llamadas a API.
 2. **Armonía Total**: Si un dato cambia en el Monitor, debe reflejarse en el Dashboard.

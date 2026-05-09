@@ -23,7 +23,7 @@ export default function AukenOptica() {
   const OPTICA_SLUG = "glowvision";
 
   const refresh = useCallback(async () => {
-    const { data: pacs } = await supabase.from("pacientes").select("*").order("ultima_interaccion_at", { ascending: false });
+    const { data: pacs } = await supabase.from("pacientes").select("*").order("created_at", { ascending: false });
     setPatients(pacs || []);
     setLoading(false);
   }, []);
