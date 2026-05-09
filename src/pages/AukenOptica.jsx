@@ -4,13 +4,29 @@ import { supabase } from "../lib/supabase";
 import { useConversation } from "../lib/useConversation";
 
 function dbToPatient(row) {
+  if (!row.fecha_proximo_control) {
+    return {
+      id: row.id, rut: row.rut, name: row.nombre, age: row.edad, phone: row.telefono,
+      lastVisit: row.fecha_ultima_visita || "Nunca", nextControl: "Pendiente",
+      receta: {
+        fecha: "—",
+        od: { esf: row.od_esfera, cil: row.od_cilindro, eje: row.od_eje || "—", av: row.od_av },
+        oi: { esf: row.oi_esfera, cil: row.oi_cilindro, eje: row.oi_eje || "—", av: row.oi_av },
+        adicion: row.adicion, dp: row.dp, tipo: row.tipo_lente,
+        notas: row.notas_clinicas, optometrista: row.optometrista,
+      },
+      historial: [], producto: row.producto_actual, estado: "nuevo", alertas: ["Sin receta registrada"],
+    };
+  }
+
   const hoy = new Date();
   const control = new Date(row.fecha_proximo_control);
   const dias = Math.round((control - hoy) / (1000 * 60 * 60 * 24));
   const estado = dias < 0 ? "vencida" : dias <= 30 ? "proxima" : "vigente";
   const alertas = [];
-  if (estado === "vencida") alertas.push("Receta vencida hace " + Math.abs(dias) + " dias");
-  if (estado === "proxima") alertas.push("Control en " + dias + " dias");
+  if (estado === "vencida") alertas.push("Receta vencida");
+  if (estado === "proxima") alertas.push("Control pronto");
+  
   return {
     id: row.id, rut: row.rut, name: row.nombre, age: row.edad, phone: row.telefono,
     lastVisit: row.fecha_ultima_visita, nextControl: row.fecha_proximo_control,
@@ -29,26 +45,27 @@ function dbToPatient(row) {
 // PALETA Y CONSTANTES
 // ─────────────────────────────────────────────────────────────────
 const C = {
-  bg:         "#090A0F",
-  bgDeep:     "#05060A",
-  surface:    "#11131C",
-  surfaceL:   "#1A1D2A",
-  border:     "#23283A",
-  borderDark: "#38BDF840",
-  ink:        "#F8FAFC",
-  inkMid:     "#94A3B8",
-  inkFaint:   "#475569",
-  blue:       "#38BDF8",
-  blueLight:  "#7DD3FC",
-  blueGhost:  "#38BDF815",
-  teal:       "#2DD4BF",
-  tealLight:  "#2DD4BF15",
+  bg:         "#07080C",
+  bgDeep:     "#030406",
+  surface:    "#0E111A",
+  surfaceL:   "#151926",
+  border:     "#1C2230",
+  borderDark: "#38BDF820",
+  ink:        "#F1F5F9",
+  inkMid:     "#64748B",
+  inkFaint:   "#334155",
+  blue:       "#0EA5E9",
+  blueLight:  "#38BDF8",
+  blueGhost:  "#0EA5E910",
+  teal:       "#14B8A6",
+  tealLight:  "#14B8A615",
   amber:      "#F59E0B",
   amberLight: "#F59E0B15",
-  red:        "#F43F5E",
-  redLight:   "#F43F5E15",
+  red:        "#EF4444",
+  redLight:   "#EF444415",
   green:      "#10B981",
   greenLight: "#10B98115",
+  glass:      "rgba(14, 17, 26, 0.8)",
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -147,10 +164,10 @@ function daysBetween(dateStr) {
 function Badge({ label, color, bg, border }) {
   return (
     <span style={{
-      background: bg, color, border: `1px solid ${border || color + "40"}`,
-      borderRadius: 4, padding: "2px 7px", fontSize: 14,
-      fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500,
-      letterSpacing: "0.04em",
+      background: bg, color, border: `1px solid ${border || "transparent"}`,
+      borderRadius: 20, padding: "3px 10px", fontSize: 11,
+      fontFamily: "'Inter', sans-serif", fontWeight: 700,
+      letterSpacing: "0.02em", textTransform: "uppercase"
     }}>{label}</span>
   );
 }
@@ -158,10 +175,11 @@ function Badge({ label, color, bg, border }) {
 function StatePill({ estado }) {
   const map = {
     vigente:  { label: "Vigente",      color: C.green,  bg: C.greenLight },
-    proxima:  { label: "Próx. vencer", color: C.amber,  bg: C.amberLight },
+    proxima:  { label: "Control pronto", color: C.amber,  bg: C.amberLight },
     vencida:  { label: "Vencida",      color: C.red,    bg: C.redLight   },
+    nuevo:    { label: "Sin Ficha",    color: C.blue,   bg: C.blueGhost  },
   };
-  const s = map[estado] || map.vigente;
+  const s = map[estado] || map.nuevo;
   return <Badge label={s.label} color={s.color} bg={s.bg} />;
 }
 
@@ -178,142 +196,69 @@ function Divider({ label }) {
 // ─────────────────────────────────────────────────────────────────
 // FICHA CARD — vista colapsable
 // ─────────────────────────────────────────────────────────────────
-function FichaCard({ patient, compact = false }) {
-  const [open, setOpen] = useState(!compact);
+function FichaCard({ patient }) {
   const p = patient;
-  const days = daysBetween(p.nextControl);
+  const isNew = p.estado === "nuevo";
 
   return (
     <div style={{
-      background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: 8, overflow: "hidden",
-      borderLeft: `3px solid ${p.estado === "vencida" ? C.red : p.estado === "proxima" ? C.amber : C.blue}`,
+      background: C.surface, borderRadius: 24, padding: 20,
+      border: `1px solid ${C.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
     }}>
-      {/* Header */}
-      <div onClick={() => compact && setOpen(o => !o)}
-        style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: compact ? "pointer" : "default", background: C.bgDeep }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: C.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', serif", flexShrink: 0 }}>
-            {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
-            <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>{p.rut} · {p.age} años</div>
-          </div>
+      <div style={{ display: "flex", gap: 15, alignItems: "center", marginBottom: 15 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 16, background: C.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700 }}>
+          {p.name[0]}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <StatePill estado={p.estado} />
-          {compact && <span style={{ fontSize: 14, color: C.inkFaint }}>{ open ? "▲" : "▼" }</span>}
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{p.name}</div>
+          <div style={{ fontSize: 12, color: C.inkMid }}>{p.rut} · {p.age} años</div>
         </div>
       </div>
 
-      {open && (
-        <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {/* Alertas */}
-          {p.alertas.length > 0 && (
-            <div style={{ background: p.estado === "vencida" ? C.redLight : C.amberLight, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
-              {p.alertas.map((a, i) => (
-                <div key={i} style={{ fontSize: 15, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
-                  <span>⚠</span><span>{a}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Receta */}
-          <div>
-            <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Receta · {p.receta.fecha}</div>
-            <div style={{ background: C.bgDeep, borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}` }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace" }}>
-                <thead>
-                  <tr style={{ background: C.blue }}>
-                    {["", "Esf.", "Cil.", "Eje", "AV"].map(h => (
-                      <th key={h} style={{ padding: "5px 8px", color: "#fff", fontWeight: 500, textAlign: "center", fontSize: 14 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[["OD", p.receta.od], ["OI", p.receta.oi]].map(([eye, vals]) => (
-                    <tr key={eye} style={{ borderBottom: `1px solid ${C.border}` }}>
-                      <td style={{ padding: "5px 8px", fontWeight: 700, color: C.blue, textAlign: "center" }}>{eye}</td>
-                      {[vals.esf, vals.cil, vals.eje, vals.av].map((v, i) => (
-                        <td key={i} style={{ padding: "5px 8px", color: C.ink, textAlign: "center" }}>{v}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {p.receta.adicion && (
-                <div style={{ padding: "5px 10px", fontSize: 14, color: C.inkMid, display: "flex", justifyContent: "space-between" }}>
-                  <span>Adición: <strong>{p.receta.adicion}</strong></span>
-                  <span>DP: <strong>{p.receta.dp}</strong></span>
-                  <span>Tipo: <strong>{p.receta.tipo}</strong></span>
-                </div>
-              )}
-            </div>
-            {p.receta.notas && (
-              <div style={{ marginTop: 5, fontSize: 14, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", fontStyle: "italic", padding: "4px 6px", borderLeft: `2px solid ${C.blue}` }}>
-                {p.receta.notas}
-              </div>
-            )}
+      {!isNew ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div style={{ background: C.bgDeep, borderRadius: 16, padding: 12 }}>
+            <div style={{ fontSize: 10, color: C.inkMid, marginBottom: 4 }}>OD</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{p.receta.od.esf} | {p.receta.od.cil}</div>
           </div>
-
-          {/* Control */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>Próximo control</div>
-              <div style={{ fontSize: 14, color: C.ink, fontWeight: 600 }}>{p.nextControl}</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
-                {days < 0 ? `Hace ${Math.abs(days)} días` : `En ${days} días`}
-              </div>
-              <div style={{ fontSize: 15, color: C.inkMid }}>{p.producto}</div>
-            </div>
+          <div style={{ background: C.bgDeep, borderRadius: 16, padding: 12 }}>
+            <div style={{ fontSize: 10, color: C.inkMid, marginBottom: 4 }}>OI</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{p.receta.oi.esf} | {p.receta.oi.cil}</div>
           </div>
+        </div>
+      ) : (
+        <div style={{ padding: "10px 0", color: C.blue, fontSize: 13, fontWeight: 500 }}>
+          ✨ Listo para su primera atención
         </div>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// REMINDER CARD — se inyecta en el chat como tarjeta visual
-// ─────────────────────────────────────────────────────────────────
 function ReminderCard({ patient }) {
   const p = patient;
-  const days = daysBetween(p.nextControl);
   const isVencida = p.estado === "vencida";
 
   return (
     <div style={{
-      background: isVencida ? C.redLight : C.amberLight,
-      border: `1px solid ${isVencida ? "#FCA5A5" : "#FCD34D"}`,
-      borderRadius: 8, padding: "12px 14px",
-      borderLeft: `4px solid ${isVencida ? C.red : C.amber}`,
+      background: isVencida ? C.redLight : C.blueGhost,
+      borderRadius: 24, padding: 20, border: `1px solid ${isVencida ? C.red + "30" : C.blue + "30"}`
     }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-        <span style={{ fontSize: 18 }}>{isVencida ? "📋" : "⏰"}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: isVencida ? C.red : C.amber, marginBottom: 3, fontFamily: "'Playfair Display', serif" }}>
-            {isVencida ? "Receta vencida" : "Control próximo"}
-          </div>
-          <div style={{ fontSize: 15, color: C.inkMid, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5 }}>
-            Última receta: <strong>{p.receta.fecha}</strong><br />
-            Optometrista: {p.receta.optometrista}<br />
-            Próximo control: <strong>{p.nextControl}</strong>
-            {days < 0 && <span style={{ color: C.red }}> (hace {Math.abs(days)} días)</span>}
-          </div>
-          <button style={{
-            marginTop: 8, background: isVencida ? C.red : C.amber,
-            color: "#fff", border: "none", borderRadius: 5,
-            padding: "6px 12px", fontSize: 15, cursor: "pointer",
-            fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
-          }}>
-            Agendar control →
-          </button>
-        </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: isVencida ? C.red : C.blue, marginBottom: 5 }}>
+        {isVencida ? "Alerta de Salud Visual" : "Seguimiento Preventivo"}
       </div>
+      <p style={{ fontSize: 14, color: C.inkMid, lineHeight: 1.5, margin: "0 0 15px 0" }}>
+        {isVencida 
+          ? `La receta de ${p.name.split(" ")[0]} expiró el ${p.nextControl}. Es crítico agendar un control.`
+          : `Se aproxima el control de ${p.name.split(" ")[0]}. Mantén el contacto para asegurar su visita.`}
+      </p>
+      <button style={{ 
+        width: "100%", padding: "12px", borderRadius: 16, border: "none", 
+        background: isVencida ? C.red : C.blue, color: "#fff", 
+        fontSize: 13, fontWeight: 700, cursor: "pointer" 
+      }}>
+        Agendar ahora
+      </button>
     </div>
   );
 }
@@ -326,49 +271,44 @@ function Bubble({ msg, isLast }) {
   const isCard = msg.role === "card";
 
   if (isCard) return (
-    <div style={{ animation: isLast ? "slideUp .3s ease" : "none" }}>
-      {msg.meta?.type === "ficha" && <FichaCard patient={msg.meta.patient} compact={false} />}
+    <div style={{ margin: "15px 0", animation: isLast ? "slideUp .3s ease" : "none" }}>
+      {msg.meta?.type === "ficha" && <FichaCard patient={msg.meta.patient} />}
       {msg.meta?.type === "reminder" && <ReminderCard patient={msg.meta.patient} />}
     </div>
   );
 
   return (
     <div style={{
-      display: "flex", gap: 8,
+      display: "flex", gap: 10,
       justifyContent: isBot ? "flex-start" : "flex-end",
       alignItems: "flex-end",
       animation: isLast ? "slideUp .25s ease" : "none",
+      margin: "4px 0"
     }}>
       {isBot && (
         <div style={{
-          width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-          background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+          width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+          background: C.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+          boxShadow: `0 4px 10px ${C.blue}30`
         }}>👁️</div>
       )}
-      <div style={{ maxWidth: "78%", display: "flex", flexDirection: "column", gap: 2, alignItems: isBot ? "flex-start" : "flex-end" }}>
-        {isBot && (
-          <span style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginLeft: 2 }}>
-            Lente · {msg.ts}
-          </span>
-        )}
+      <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", gap: 2, alignItems: isBot ? "flex-start" : "flex-end" }}>
         <div style={{
-          padding: "9px 13px",
-          borderRadius: isBot ? "3px 14px 14px 14px" : "14px 3px 14px 14px",
+          padding: "12px 16px",
+          borderRadius: isBot ? "4px 20px 20px 20px" : "20px 4px 20px 20px",
           background: isBot ? C.surface : C.blue,
           color: isBot ? C.ink : "#fff",
-          fontSize: 15, lineHeight: 1.6,
+          fontSize: 14, lineHeight: 1.5,
           border: isBot ? `1px solid ${C.border}` : "none",
-          fontFamily: "'DM Sans', sans-serif",
-          boxShadow: isBot ? "0 1px 4px rgba(0,0,0,.06)" : `0 2px 8px ${C.blue}50`,
-          whiteSpace: "pre-wrap", wordBreak: "break-word",
+          fontFamily: "'Inter', sans-serif",
+          boxShadow: isBot ? "0 2px 5px rgba(0,0,0,0.1)" : `0 4px 15px ${C.blue}40`,
+          whiteSpace: "pre-wrap"
         }}>
           {msg.content}
         </div>
-        {!isBot && (
-          <span style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginRight: 2 }}>
-            {msg.ts}
-          </span>
-        )}
+        <span style={{ fontSize: 10, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginTop: 2 }}>
+          {msg.ts}
+        </span>
       </div>
     </div>
   );
@@ -397,13 +337,11 @@ function PanelFichas({ onSelectPatient, activePatient }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.from("pacientes").select("*").order("nombre")
       .then(({ data, error }) => {
         if (!error && data) setPatients(data.map(dbToPatient));
-        setLoading(false);
       });
   }, []);
 
@@ -413,83 +351,51 @@ function PanelFichas({ onSelectPatient, activePatient }) {
     return matchSearch && matchFilter;
   });
 
-  const counts = {
-    all:     patients.length,
-    vencida: patients.filter(p => p.estado === "vencida").length,
-    proxima: patients.filter(p => p.estado === "proxima").length,
-    vigente: patients.filter(p => p.estado === "vigente").length,
-  };
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: C.bg }}>
-      {/* Header panel */}
-      <div style={{ padding: "16px 16px 12px", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 15, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
-          Fichas de pacientes
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: C.bgDeep }}>
+      <div style={{ padding: "24px 20px 16px" }}>
+        <h3 style={{ fontSize: 12, color: C.inkFaint, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 15 }}>Pacientes</h3>
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o RUT..."
-          style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: "7px 10px", fontSize: 14, color: C.ink, outline: "none", fontFamily: "'IBM Plex Mono', monospace" }} />
-
-        {/* Filtros */}
-        <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-          {[["all", "Todos", C.blue], ["vencida", "Vencidas", C.red], ["proxima", "Próximas", C.amber], ["vigente", "Vigentes", C.green]].map(([val, lbl, col]) => (
-            <button key={val} onClick={() => setFilter(val)} style={{
-              flex: 1, background: filter === val ? col : C.surface,
-              color: filter === val ? "#fff" : C.inkFaint,
-              border: `1px solid ${filter === val ? col : C.border}`,
-              borderRadius: 5, padding: "4px 2px", fontSize: 9, cursor: "pointer",
-              fontFamily: "'IBM Plex Mono', monospace",
-              transition: "all .15s",
-            }}>
-              {lbl} ({counts[val]})
-            </button>
-          ))}
-        </div>
+          placeholder="Buscar..."
+          style={{ 
+            width: "100%", background: C.surface, border: `1px solid ${C.border}`, 
+            borderRadius: 14, padding: "10px 16px", fontSize: 13, color: C.ink, 
+            outline: "none", transition: "all 0.2s" 
+          }} 
+          onFocus={e => e.target.style.borderColor = C.blue}
+          onBlur={e => e.target.style.borderColor = C.border}
+        />
       </div>
 
-      {/* Lista */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 10px 20px" }}>
         {filtered.map(p => (
-          <div key={p.id} onClick={() => onSelectPatient(p)}
-            style={{
-              background: activePatient?.id === p.id ? C.blueGhost : C.surface,
-              border: `1px solid ${activePatient?.id === p.id ? C.blue : C.border}`,
-              borderRadius: 8, padding: "10px 12px", cursor: "pointer",
-              transition: "all .15s",
-              borderLeft: `3px solid ${p.estado === "vencida" ? C.red : p.estado === "proxima" ? C.amber : C.teal}`,
-            }}
-            onMouseEnter={e => { if (activePatient?.id !== p.id) e.currentTarget.style.background = C.bgDeep; }}
-            onMouseLeave={e => { if (activePatient?.id !== p.id) e.currentTarget.style.background = C.surface; }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: "'Playfair Display', serif" }}>{p.name}</div>
-                <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginTop: 1 }}>{p.rut} · {p.age} años</div>
-              </div>
-              <StatePill estado={p.estado} />
+          <div key={p.id} onClick={() => onSelectPatient(p)} style={{
+            padding: "16px 20px", borderRadius: 20, marginBottom: 8, cursor: "pointer",
+            background: activePatient?.id === p.id ? C.surfaceL : "transparent",
+            border: `1px solid ${activePatient?.id === p.id ? C.blue + "30" : "transparent"}`,
+            transition: "all 0.2s"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 14, color: C.ink }}>{p.name}</span>
+              <div style={{ 
+                width: 7, height: 7, borderRadius: "50%", 
+                background: p.estado === "vencida" ? C.red : p.estado === "proxima" ? C.amber : C.blue,
+                boxShadow: `0 0 10px ${p.estado === "vencida" ? C.red : p.estado === "proxima" ? C.amber : C.blue}80`
+              }} />
             </div>
+            <div style={{ fontSize: 11, color: C.inkMid }}>RUT: {p.rut}</div>
             {p.alertas.length > 0 && (
-              <div style={{ marginTop: 5, fontSize: 14, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace" }}>
-                ⚠ {p.alertas[0]}
+              <div style={{ 
+                fontSize: 10, marginTop: 10, padding: "4px 8px", borderRadius: 8,
+                background: p.estado === "vencida" ? C.redLight : C.amberLight,
+                color: p.estado === "vencida" ? C.red : C.amber,
+                fontWeight: 600, display: "inline-block"
+              }}>
+                {p.alertas[0]}
               </div>
             )}
-            <div style={{ marginTop: 4, fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace" }}>
-              Último control: {p.lastVisit}
-            </div>
           </div>
         ))}
-      </div>
-
-      {/* Resumen alertas */}
-      <div style={{ padding: "10px 12px", borderTop: `1px solid ${C.border}`, background: C.bgDeep }}>
-        <div style={{ fontSize: 14, color: C.inkFaint, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 5 }}>RESUMEN DE ALERTAS</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {patients.filter(p => p.alertas.length > 0).map(p => (
-            <div key={p.id} style={{ fontSize: 14, color: p.estado === "vencida" ? C.red : C.amber, fontFamily: "'IBM Plex Mono', monospace", display: "flex", gap: 5 }}>
-              <span>·</span><span>{p.name}: {p.alertas[0]}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -705,85 +611,160 @@ export default function AukenOptica() {
   useEffect(() => {
     supabase.from("pacientes").select("*").order("nombre")
       .then(({ data, error }) => {
-        if (!error && data) setAllPatients(data.map(dbToPatient));
+        if (!error && data) {
+          // Filtrar usuarios que parecen de prueba para una vista limpia
+          const testNames = ["ismael", "juanito", "irribarren", "loco dani", "test"];
+          const cleanData = data.filter(p => 
+            !testNames.some(t => p.nombre?.toLowerCase().includes(t))
+          );
+          setAllPatients(cleanData.map(dbToPatient));
+        }
       });
   }, []);
 
   const alertCount = allPatients.filter(p => p.alertas.length > 0).length;
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ background: C.bg, minHeight: "100vh", color: C.ink, fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; background: ${C.bgDeep}; }
-        ::-webkit-scrollbar-thumb { background: ${C.borderDark}; border-radius: 4px; }
-        @keyframes slideUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-        @keyframes dot      { 0%,80%,100%{transform:translateY(0);opacity:.5} 40%{transform:translateY(-5px);opacity:1} }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 10px; }
       `}</style>
 
-      {/* TOP NAV */}
-      <nav style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 20px", height: 50, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, background: C.blue, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👁️</div>
+      {/* Header — Estilo Glass */}
+      <header style={{ 
+        height: 60, background: C.glass, backdropFilter: "blur(12px)", 
+        borderBottom: `1px solid ${C.border}`, display: "flex", 
+        alignItems: "center", justifyContent: "space-between", padding: "0 24px",
+        position: "sticky", top: 0, zIndex: 100 
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 32, height: 32, background: C.blue, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 20px ${C.blue}40` }}>👁️</div>
           <div>
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15, color: C.ink }}>{opticaData.name}</span>
-            <span style={{ color: C.border, margin: "0 8px" }}>·</span>
-            <span style={{ fontSize: 15, color: C.amber, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>[MODO MONITOR]</span>
+            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>{opticaData.name}</h1>
+            <span style={{ fontSize: 10, color: C.amber, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>Monitor IA Activo</span>
           </div>
         </div>
 
-        {/* Tab toggle */}
-        <div style={{ display: "flex", background: C.bgDeep, borderRadius: 7, padding: 3, gap: 2, border: `1px solid ${C.border}` }}>
-          {[["split", "⊞ Completo"], ["fichas", "📋 Fichas"], ["chat", "💬 Chat"]].map(([val, lbl]) => (
-            <button key={val} onClick={() => setView(val)} style={{
-              background: view === val ? C.surface : "transparent",
-              color: view === val ? C.blue : C.inkFaint,
-              border: view === val ? `1px solid ${C.border}` : "1px solid transparent",
-              borderRadius: 5, padding: "4px 12px", fontSize: 15, cursor: "pointer",
-              fontFamily: "'IBM Plex Mono', monospace",
-              boxShadow: view === val ? "0 1px 3px rgba(0,0,0,.08)" : "none",
-              transition: "all .15s",
-            }}>{lbl}</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {["split", "chat", "fichas"].map(v => (
+            <button key={v} onClick={() => setView(v)} style={{
+              padding: "6px 14px", borderRadius: 8, border: "none",
+              background: view === v ? C.blue : C.surfaceL,
+              color: view === v ? "#fff" : C.inkMid,
+              fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+            }}>{v.toUpperCase()}</button>
           ))}
         </div>
+      </header>
 
-        {/* Alertas badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ background: C.redLight, border: `1px solid ${C.red}40`, borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ fontSize: 14, color: C.red, fontFamily: "'IBM Plex Mono', monospace" }}>
-              ⚠ {alertCount} alertas pendientes
-            </span>
-          </div>
-          <div style={{ width: 28, height: 28, background: C.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace" }}>
-            VC
-          </div>
-        </div>
-      </nav>
-
-      {/* BODY */}
-      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
-        {/* Panel fichas */}
+      <main style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Sidebar — Pacientes */}
         {(view === "split" || view === "fichas") && (
-          <div style={{ width: view === "fichas" ? "100%" : 300, borderRight: `1px solid ${C.border}`, flexShrink: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <aside style={{ width: 320, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", background: C.bgDeep, flexShrink: 0 }}>
             <PanelFichas onSelectPatient={setActivePatient} activePatient={activePatient} />
-          </div>
+          </aside>
         )}
 
-        {/* Chat */}
-        {(view === "split" || view === "chat") && (
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <Chat activePatient={activePatient} allPatients={allPatients} opticaName={opticaData.name} key={activePatient?.id || "no-patient"} />
-          </div>
-        )}
-      </div>
+        {/* Contenido Principal */}
+        <section style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+          {/* Chat */}
+          {(view === "split" || view === "chat") && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: view === "split" ? `1px solid ${C.border}` : "none" }}>
+              <Chat activePatient={activePatient} allPatients={allPatients} opticaName={opticaData.name} key={activePatient?.id || "no-patient"} />
+            </div>
+          )}
 
-      {/* Instrucción demo */}
-      {view === "split" && !activePatient && (
-        <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", background: C.blue, color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 15, fontFamily: "'IBM Plex Mono', monospace", pointerEvents: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,.2)" }}>
-          ← Selecciona un paciente para simular una conversación personalizada
-        </div>
-      )}
+          {/* Ficha Detallada (Vista Lateral) */}
+          {(view === "split" || view === "fichas") && activePatient && (
+            <div style={{ width: 400, background: C.bgDeep, overflowY: "auto", padding: 24, animation: "slideUp 0.3s ease", flexShrink: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Ficha Técnica</h2>
+                <Badge label={activePatient.estado} color={activePatient.estado === "vencida" ? C.red : C.blue} bg={activePatient.estado === "vencida" ? C.redLight : C.blueGhost} />
+              </div>
+              
+              <div style={{ background: C.surface, borderRadius: 24, padding: 24, marginBottom: 20, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.inkMid, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 15 }}>Última Receta</div>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15, marginBottom: 20 }}>
+                  <div style={{ background: C.bgDeep, borderRadius: 16, padding: 15 }}>
+                    <div style={{ fontSize: 10, color: C.inkMid, marginBottom: 5 }}>Ojo Derecho</div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{activePatient.receta.od.esf} | {activePatient.receta.od.cil}</div>
+                    <div style={{ fontSize: 11, color: C.inkMid, marginTop: 4 }}>Eje: {activePatient.receta.od.eje}</div>
+                  </div>
+                  <div style={{ background: C.bgDeep, borderRadius: 16, padding: 15 }}>
+                    <div style={{ fontSize: 10, color: C.inkMid, marginBottom: 5 }}>Ojo Izquierdo</div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{activePatient.receta.oi.esf} | {activePatient.receta.oi.cil}</div>
+                    <div style={{ fontSize: 11, color: C.inkMid, marginTop: 4 }}>Eje: {activePatient.receta.oi.eje}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: C.inkMid }}>Tipo:</span>
+                    <span style={{ fontWeight: 600 }}>{activePatient.receta.tipo || "Multifocal"}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: C.inkMid }}>Próximo Control:</span>
+                    <span style={{ fontWeight: 600, color: activePatient.estado === "vencida" ? C.red : C.ink }}>{activePatient.nextControl}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: C.surface, borderRadius: 24, padding: 24, marginBottom: 20, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.inkMid, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 15 }}>Estado del Lead</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                  {[1, 2, 3, 4].map(step => (
+                    <div key={step} style={{ 
+                      flex: 1, height: 4, borderRadius: 2, 
+                      background: step <= (activePatient.estado === "vencida" ? 2 : 1) ? C.blue : C.border 
+                    }} />
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                   <div style={{ fontSize: 24 }}>{activePatient.estado === "vencida" ? "🔥" : "🧊"}</div>
+                   <div>
+                     <div style={{ fontSize: 13, fontWeight: 700 }}>{activePatient.estado === "vencida" ? "Prioridad Alta" : "Prospecto Nuevo"}</div>
+                     <div style={{ fontSize: 11, color: C.inkMid }}>{activePatient.estado === "vencida" ? "Receta expirada: Intención de compra alta" : "Recién ingresado al sistema"}</div>
+                   </div>
+                </div>
+              </div>
+
+              <div style={{ background: C.surface, borderRadius: 24, padding: 24, marginBottom: 20, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.inkMid, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 15 }}>Línea de Tiempo</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+                  {[
+                    { t: "Hoy", e: "Consulta vía WhatsApp", i: "💬" },
+                    { t: activePatient.receta.fecha, e: "Última compra / Control", i: "🛒" }
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ display: "flex", gap: 12, position: "relative" }}>
+                      <div style={{ fontSize: 14, background: C.bgDeep, width: 24, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>{item.i}</div>
+                      {idx === 0 && <div style={{ position: "absolute", left: 11, top: 24, bottom: -15, width: 2, background: C.border }} />}
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{item.e}</div>
+                        <div style={{ fontSize: 10, color: C.inkMid }}>{item.t}</div>
+                      </div>
+                    </div>
+                  ))}
+              <div style={{ background: C.surface, borderRadius: 24, padding: 24, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.inkMid, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 15 }}>Acciones de Conversión</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button style={{ padding: "14px", borderRadius: 16, background: C.blue, color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                    📅 Agendar Examen Gratis
+                  </button>
+                  <button style={{ padding: "14px", borderRadius: 16, background: C.surfaceL, color: C.ink, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    💬 Enviar Oferta WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
+  );
+}
   );
 }

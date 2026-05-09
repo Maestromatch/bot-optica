@@ -1,16 +1,15 @@
 // =============================================================
 // AUKÉN — Chat endpoint (widget web y dashboard interno)
 // =============================================================
-// Usa Claude API directo (no Groq) y persiste cada conversación
-// en Supabase para que sobreviva recargas y se pueda auditar.
+// Usa Claude API directo y persiste cada conversación.
+// Carga la config de la óptica desde Supabase (multi-tenant ready).
 // =============================================================
 
 import { getSupabaseAdmin } from "../src/lib/supabase-admin.js";
 import { callClaude, MODELS, logApiCall } from "../src/lib/anthropic.js";
-import { buildSystemPrompt, parseSpecialTags, getEstadoReceta } from "../src/lib/prompts.js";
+import { buildSystemPrompt, parseSpecialTags, getEstadoReceta, loadOpticaConfig } from "../src/lib/prompts.js";
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -29,6 +28,7 @@ export default async function handler(req, res) {
       phone = "web-anonymous",
       sessionId,
       canal = "web",
+      opticaSlug = "glowvision",
     } = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -37,21 +37,16 @@ export default async function handler(req, res) {
 
     const supabase = getSupabaseAdmin();
 
-    // ───────── 1. Cargar paciente si tenemos identificador ─────────
+    // ───── 1. Cargar config de la óptica ─────
+    const opticaCfg = await loadOpticaConfig(supabase, opticaSlug);
+
+    // ───── 2. Cargar paciente si tenemos identificador ─────
     let paciente = null;
     if (pacienteId) {
-      const { data } = await supabase
-        .from("pacientes")
-        .select("*")
-        .eq("id", pacienteId)
-        .maybeSingle();
+      const { data } = await supabase.from("pacientes").select("*").eq("id", pacienteId).maybeSingle();
       paciente = data;
     } else if (pacienteRut) {
-      const { data } = await supabase
-        .from("pacientes")
-        .select("*")
-        .eq("rut", pacienteRut)
-        .maybeSingle();
+      const { data } = await supabase.from("pacientes").select("*").eq("rut", pacienteRut).maybeSingle();
       paciente = data;
     }
 
@@ -59,12 +54,10 @@ export default async function handler(req, res) {
       paciente.estado_receta = getEstadoReceta(paciente.fecha_ultima_visita);
     }
 
-    // ───────── 2. Construir system prompt ─────────
-    // Si el cliente envía un system custom, lo respetamos.
-    // Si no, usamos el builder estándar.
-    const systemPrompt = system || buildSystemPrompt(paciente, canal);
+    // ───── 3. Construir system prompt ─────
+    const systemPrompt = system || buildSystemPrompt(paciente, canal, null, opticaCfg);
 
-    // ───────── 3. Llamar a Claude ─────────
+    // ───── 4. Llamar a Claude ─────
     const claude = await callClaude({
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),
@@ -75,10 +68,9 @@ export default async function handler(req, res) {
 
     const { cleanText, actions } = parseSpecialTags(claude.text);
 
-    // ───────── 4. Persistir en conversaciones (best-effort) ─────────
+    // ───── 5. Persistir en conversaciones ─────
     let conversacionId = null;
     try {
-      // Solo el último mensaje del usuario (los anteriores ya están guardados)
       const lastUserMsg = messages[messages.length - 1];
       if (lastUserMsg?.role === "user") {
         await supabase.rpc("append_message_to_conversation", {
@@ -100,19 +92,18 @@ export default async function handler(req, res) {
       conversacionId = cid;
     } catch (err) {
       console.warn("[chat] No se pudo persistir conversación:", err.message);
-      // No es bloqueante. Seguimos.
     }
 
-    // ───────── 5. Ejecutar acciones especiales (REGISTER, ESCALAR) ─────────
+    // ───── 6. Ejecutar acciones especiales ─────
     for (const action of actions) {
-      await executeWebAction(supabase, action, phone, paciente).catch(err =>
+      await executeWebAction(supabase, action, phone, paciente, opticaCfg).catch(err =>
         console.warn(`[chat] Acción ${action.type} falló:`, err.message)
       );
     }
 
-    // ───────── 6. Log de costos (no bloquea respuesta) ─────────
+    // ───── 7. Log de costos ─────
     logApiCall(supabase, {
-      opticaId: paciente?.optica_id,
+      opticaId: opticaCfg?.id || paciente?.optica_id,
       conversacionId,
       model: MODELS.CHAT,
       usage: claude.usage,
@@ -120,7 +111,6 @@ export default async function handler(req, res) {
       latencyMs: claude.latencyMs,
     });
 
-    // ───────── 7. Responder en formato compatible ─────────
     return res.status(200).json({
       content: [{ type: "text", text: cleanText }],
       actions,
@@ -134,13 +124,13 @@ export default async function handler(req, res) {
       error: err.message || "Error interno del chat",
       content: [{
         type: "text",
-        text: "Disculpa, tuve un problema técnico. Puedes llamarnos al +56 9 5493 2802."
+        text: "Disculpa, tuve un problema técnico. Por favor inténtalo en un momento."
       }],
     });
   }
 }
 
-async function executeWebAction(supabase, action, phone, paciente) {
+async function executeWebAction(supabase, action, phone, paciente, opticaCfg) {
   if (action.type === "register" && !paciente) {
     await supabase.from("pacientes").insert({
       nombre: action.nombre,
@@ -149,16 +139,31 @@ async function executeWebAction(supabase, action, phone, paciente) {
       notas_clinicas: `Captado por chat web. Comuna: ${action.comuna}`,
       fecha_ultima_visita: new Date().toISOString().split("T")[0],
       tags: ["lead-web"],
+      optica_id: opticaCfg?.id,
     });
   }
 
-  if (action.type === "escalate") {
-    if (phone !== "web-anonymous") {
-      await supabase
-        .from("conversaciones")
-        .update({ status: "escalated" })
-        .eq("phone", phone)
-        .eq("status", "active");
-    }
+  if (action.type === "escalate" && phone !== "web-anonymous") {
+    await supabase
+      .from("conversaciones")
+      .update({ status: "escalated", escalated_to: opticaCfg?.numero_escalada })
+      .eq("phone", phone)
+      .eq("status", "active");
+  }
+
+  if (action.type === "book" && paciente) {
+    await supabase.from("citas").insert({
+      paciente_id: paciente.id,
+      optica_id: opticaCfg?.id || paciente.optica_id,
+      nombre: paciente.nombre,
+      rut: paciente.rut,
+      telefono: paciente.telefono,
+      servicio: action.servicio,
+      fecha: action.fecha,
+      hora: action.hora,
+      origen: "web-bot",
+      canal: "web",
+      estado: "pendiente_confirmacion",
+    });
   }
 }
