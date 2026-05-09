@@ -129,9 +129,17 @@ async function processPhoneQueue(supabase, phone, messages) {
     // Llamar a Claude (con config de óptica)
     const systemPrompt = buildSystemPrompt(pacienteEnriched, "whatsapp", conv?.summary, configCache);
 
+    // DETERMINAR SI HAY IMAGEN (NUTRIENT PREP)
+    const imageMessage = messages.find(m => m.message_type === "image");
+    let userContent = consolidatedText;
+    
+    if (imageMessage) {
+      userContent = `[EL USUARIO ENVIÓ UNA IMAGEN/RECETA CON ID: ${imageMessage.media_id}]\n${consolidatedText}`;
+    }
+
     const claude = await callClaude({
       system: systemPrompt,
-      messages: [...history, { role: "user", content: consolidatedText }],
+      messages: [...history, { role: "user", content: userContent }],
       model: MODELS.CHAT,
       maxTokens: 600,
       temperature: 0.7,
@@ -139,11 +147,20 @@ async function processPhoneQueue(supabase, phone, messages) {
 
     const { cleanText, actions } = parseSpecialTags(claude.text);
 
+    // Si hay imagen, forzar acción de escaneo en la metadata
+    if (imageMessage) {
+      actions.push({ type: "ocr_scan", media_id: imageMessage.media_id });
+    }
+
     // Guardar mensajes en conversación
     await supabase.rpc("append_message_to_conversation", {
       p_phone: phone, p_canal: "whatsapp", p_role: "user",
-      p_content: consolidatedText,
-      p_meta: { message_ids: messages.map(m => m.meta_message_id), consolidated_count: messages.length },
+      p_content: consolidatedText || "[Imagen/Receta]",
+      p_meta: { 
+        message_ids: messages.map(m => m.id), 
+        has_image: !!imageMessage,
+        media_id: imageMessage?.media_id 
+      },
     });
 
     const { data: convId } = await supabase.rpc("append_message_to_conversation", {
