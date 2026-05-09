@@ -152,22 +152,17 @@ async function processPhoneQueue(supabase, phone, messages) {
       actions.push({ type: "ocr_scan", media_id: imageMessage.media_id });
     }
 
-    // Guardar mensajes en conversación
-    await supabase.rpc("append_message_to_conversation", {
-      p_phone: phone, p_canal: "whatsapp", p_role: "user",
-      p_content: consolidatedText || "[Imagen/Receta]",
-      p_meta: { 
-        message_ids: messages.map(m => m.id), 
-        has_image: !!imageMessage,
-        media_id: imageMessage?.media_id 
-      },
-    });
+    // Guardar mensajes en tabla mensajes_chat (Monitor Realtime)
+    await supabase.from("mensajes_chat").insert([
+      { paciente_id: paciente?.id, remitente: "cliente", contenido: consolidatedText || "[Imagen/Receta]", metadata: { phone, media_id: imageMessage?.media_id } },
+      { paciente_id: paciente?.id, remitente: "bot", contenido: cleanText, metadata: { actions } }
+    ]);
 
-    const { data: convId } = await supabase.rpc("append_message_to_conversation", {
-      p_phone: phone, p_canal: "whatsapp", p_role: "assistant",
-      p_content: cleanText,
-      p_meta: { actions, model: MODELS.CHAT },
-    });
+    // NUTRIENT OCR INTEGRATION (SI HAY IMAGEN)
+    if (imageMessage && process.env.NUTRIENT_API_KEY) {
+      // Aquí se dispararía el proceso de OCR en segundo plano o asíncrono
+      console.log("[OCR] Procesando receta con Nutrient:", imageMessage.media_id);
+    }
 
     // Log de costos
     logApiCall(supabase, {
