@@ -17,7 +17,7 @@ const Z = {
   amber:    "#F59E0B",
   red:      "#EF4444",
   green:    "#10B981",
-  primary:  "#FB923C", // Naranja Aukén
+  primary:  "#FB923C", 
 };
 
 const ADMIN_PASSWORD = "auken-admin-2026";
@@ -140,12 +140,12 @@ export default function AukenAdmin() {
         <Card style={{ width: 360, textAlign: "center", padding: 40 }} accent={Z.primary} glow>
           <div style={{ fontSize: 40, marginBottom: 20 }}>🌌</div>
           <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 24, color: Z.ink, marginBottom: 8 }}>AUKÉN OS</h2>
-          <p style={{ fontSize: 12, color: Z.inkFaint, marginBottom: 32, letterSpacing: "0.1em" }}>SUPER ADMIN TERMINAL</p>
+          <p style={{ fontSize: 12, color: Z.inkFaint, marginBottom: 32, letterSpacing: "0.1em" }}>TERMINAL SUPER ADMIN</p>
           <form onSubmit={handleLogin}>
-            <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="ACCESS KEY"
+            <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="CLAVE DE ACCESO"
               style={{ width: "100%", background: Z.bgDeep, border: `1px solid ${Z.border}`, color: Z.ink, padding: 14, borderRadius: 12, outline: "none", fontSize: 13, textAlign: "center", marginBottom: 20, fontFamily: "'IBM Plex Mono', monospace" }} />
             <button type="submit" style={{ width: "100%", background: Z.primary, color: Z.bgDeep, border: "none", borderRadius: 12, padding: 14, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-              INITIALIZE SESSION
+              INICIAR SESIÓN
             </button>
           </form>
         </Card>
@@ -166,7 +166,7 @@ export default function AukenAdmin() {
             <div style={{ width: 32, height: 32, background: Z.primary, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: Z.bgDeep, fontWeight: 900 }}>A</div>
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 700 }}>AUKÉN SUPERADMIN</h1>
           </div>
-          <p style={{ color: Z.inkFaint, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>ECOSYSTEM MONITOR V6.0</p>
+          <p style={{ color: Z.inkFaint, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>MONITOR DEL ECOSISTEMA v6.0</p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={async () => {
@@ -175,7 +175,7 @@ export default function AukenAdmin() {
               if (!error) alert("SISTEMA PURGADO.");
             }
           }} style={{ background: "transparent", color: Z.red, border: `1px solid ${Z.red}40`, borderRadius: 12, padding: "10px 20px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-            PURGAR SISTEMA
+            PURGAR DATOS
           </button>
           <button onClick={() => { localStorage.removeItem("auken_admin"); setAuthed(false); }}
             style={{ background: Z.surfaceL, border: `1px solid ${Z.border}`, color: Z.inkMid, borderRadius: 12, padding: "10px 20px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
@@ -186,7 +186,7 @@ export default function AukenAdmin() {
 
       {/* METRICS ZEN */}
       <div style={{ display: "flex", gap: 20, marginBottom: 40 }}>
-        <KPIZen icon="💵" label="MRR ACTUAL" value={`$${totalMRR.toLocaleString("es-CL")}`} color={Z.green} glow />
+        <KPIZen icon="💵" label="MRR TOTAL" value={`$${totalMRR.toLocaleString("es-CL")}`} color={Z.green} glow />
         <KPIZen icon="🏢" label="ÓPTICAS" value={opticas.length} color={Z.neon} />
         <KPIZen icon="✅" label="ACTIVAS" value={opticas.filter(o => o.status === "active").length} color={Z.green} />
         <KPIZen icon="🚫" label="SUSPENDIDAS" value={opticas.filter(o => o.status !== "active").length} color={Z.red} />
