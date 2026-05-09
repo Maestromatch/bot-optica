@@ -748,6 +748,9 @@ export default function AukenOptica() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
               <div style={{ background: C.surface, borderRadius: 24, padding: 24, border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 11, color: C.inkMid, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 15 }}>Acciones de Conversión</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -764,7 +767,5 @@ export default function AukenOptica() {
         </section>
       </main>
     </div>
-  );
-}
   );
 }
